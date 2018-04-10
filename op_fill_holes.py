@@ -68,9 +68,9 @@ def fill_holes_sharp(obj):
     bm.edges.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
 
-    # List of processed edges
-    processed_edges = []
-    
+    processed_edges = [] # List of processed edges
+    n_unprocessed = 0 # number of unprocessed edges
+    max_edges = len(bm.edges) # maximum number of edges in original mesh
     iter = 0
     while True:
         iter += 1
@@ -79,20 +79,23 @@ def fill_holes_sharp(obj):
             l.info("Loop fill iteration %d" % iter \
                 + ", no unprocessed boundary edges found!")
             break
+        # Stop if edges contains a newly created edge
+        new_edges = [e for e in edges if e.index > max_edges]
+        if len(new_edges) > 0:
+            l.info("Loop fill iteration %d" % iter \
+                + ", no more original boundary edges found!")
+            break            
         l.debug("Boundary %d" % iter \
             + ", found %d connected boundary edges" % len(edges))
-        l.debug(edges)
-        # if len(edges) == 1:
-        #    l.debug("Single edge %d is left unprocessed" % edges[0].index)
-        #    continue            
-
+        
         # Generate vertex data and try to fill holes
         bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn = \
             FHS_generate_vertex_data(obj, edges)
-        rval = FHS_fill_holes_to_boundary(bm, bdata_v, bdata_e1, bdata_e2, \
-            bdata_a, bdata_processed, bdata_conn)
+        rval = FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, \
+            bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn)
         l.info("Boundary %d:" % iter \
-            + " Failed %d, %d edges" % (rval, len(edges)))        
+            + " Failed %d, %d edges" % (rval, len(edges)))
+        n_unprocessed += rval
         del [bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed]
         del [bdata_conn, edges]
         
@@ -100,7 +103,7 @@ def fill_holes_sharp(obj):
     bmesh_to_object(obj, bm)
     bm.free()
     bpy.ops.object.mode_set(mode = 'OBJECT')
-    return rval
+    return n_unprocessed
     
 def FHS_get_continuous_boundary_edges(bm, processed_edges):
     """Finds first continuous set of boundary edges in bmesh bm
@@ -183,9 +186,9 @@ def FHS_generate_vertex_data(obj, edges):
     for vertices of boundary edge path edges for object obj.
     
     Returned boundary vertex data include:
-    bdata_v - vertex index number
-    bdata_e1 - edge1 index number
-    bdata_e2 - edge2 index number
+    bdata_v - vertex object 
+    bdata_e1 - edge 1 object
+    bdata_e2 - edge 2 object
     bdata_a - angle between edge1 and edge2
     bdata_processed - list to mark which vertices have been processed already
     bdata_conn - Numpy matrix of allowed/prohibited connections between 
@@ -251,20 +254,22 @@ def FHS_populate_vert_data(v, e, bdata_v, bdata_e1, bdata_e2, bdata_a):
         bdata_e2.append(None)
         bdata_a.append(math.radians(180))
 
-def FHS_fill_holes_to_boundary(bm, bdata_v, bdata_e1, bdata_e2, \
+def FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, bdata_e1, bdata_e2, \
         bdata_a, bdata_processed, bdata_conn):
     """Fills triangle faces to boundary edge path using argument data.
     Arguments are described in function FHS_generate_vertex_data().
+    Returns number of failed faces (failed fills).
     """
 
-    n_unprocessed = bdata_processed.count(False)
+    # Number of triangle faces to be filled to a boundary loop
+    # is number of vertices - 2
+    n_unprocessed = bdata_processed.count(False) - 2
     iter = 0
-    n_unallowed = 0 # number of rejected face creation attempts
     while n_unprocessed > 0:
         iter += 1
         l.debug("FHS boundary iteration %d " % iter \
-            + "unprocessed edges %d" % n_unprocessed)
-        # boolean to mark addition of a new edge when creating face
+            + "unprocessed verts %d" % n_unprocessed)
+        # boolean to mark a succesfful face creation
         addition = False
         # Process vertices in increasing angle order
         angles = numpy.argsort(bdata_a)
@@ -292,28 +297,38 @@ def FHS_fill_holes_to_boundary(bm, bdata_v, bdata_e1, bdata_e2, \
             # ov2 with oov1. Therefore face creation is allowed only if those
             # connections are allowed according to connectivity matrix.
             # Also connection between ov1 and ov2 must be allowed.
+            # Additionally, connection is not made if it creates sharp edges.
             if FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, oov2) and \
                 FHS_connection_is_allowed(bdata_v, bdata_conn, ov2, oov1) and \
-                FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, ov2):
+                FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, ov2) and \
+                not FHS_connection_creates_sharp_edge(e1, ov2) and \
+                not FHS_connection_creates_sharp_edge(e2, ov1):
                     addition = FHS_connect(bm, i, bdata_v, bdata_e1, \
                         bdata_e2, bdata_a)
                     bdata_processed[i] = True
-                    n_unprocessed -= 1
+                    if addition:
+                        n_unprocessed -= 1
                     break # get out of for loop
-            else:
-                # Face creation was not allowed
-                n_unallowed += 1
-                
         # If no new connections (edges) were made, then stop
         if not addition:
             break
-    return n_unallowed
+
+    # Add remaining boundary edges to selection
+    n_unprocessed = 0
+    for e in set(bdata_e1 + bdata_e2):
+        if e != None:
+            l.debug("%d %d" % (e.index, len(e.link_faces)))
+            if len(e.link_faces) == 1:
+                l.debug("Select remaining boundary edge %d" % e.index)
+                e.select = True
+                n_unprocessed += 1
+    return n_unprocessed
 
 def FHS_other_vert(v, e, bdata_v, bdata_e1, bdata_e2):
     """Returns the 'other' vertex connected to vertex v than the one on the
     other end of edge e. v is assumed to be connected to boundary edges
     e and e2 in the boundary data. This function finds the vertex at the 
-    other end of e2.
+    other end of e2. Returns None in case of failure.
     """
 
     if v == None or e == None:
@@ -324,7 +339,7 @@ def FHS_other_vert(v, e, bdata_v, bdata_e1, bdata_e2):
     elif bdata_e2[i] == e:
         oe = bdata_e1[i]
     else:
-        raise ValueError ("Could not find other edge for vertex %d" % i)
+        return None
     if oe == None:
         return None
     return oe.other_vert(v)
@@ -335,9 +350,10 @@ def FHS_connection_is_allowed(bdata_v, bdata_conn, v1, v2):
     Return True for allow connection and False for prohibit connection.
     """
     
-    # If v1 or v2 are undefined, allow their hypothetical connection.
-    # Undefined vertices originate frot searching connection beyond
+    # If v1 or v2 are undefined, allow them to be connected.
+    # Undefined vertices originate from searching connection beyond
     # loop end points when boundary loop is not closed.
+    # TODO: Fix FHS_connect to make this unneeded.
     if v1 == None or v2 == None:
         return True
     
@@ -352,14 +368,34 @@ def FHS_connection_is_allowed(bdata_v, bdata_conn, v1, v2):
         raise ValueError("Vertice %d is not in bdata_v" % v2.index)         
     
     return bdata_conn[iv1, iv2]
-    
+
+def FHS_connection_creates_sharp_edge(e, v):
+    """Checks if boundary edge e would create a sharp edge if a
+    triangle face were created connecting edge e vertices and vertex v.
+    Returns True if edge would become sharp and False otherwise.
+    """
+
+    # MIN_COS_ANGLE is minimum value for cos(angle) below which angle is
+    # assumed to be effectively zero
+    MIN_COS_ANGLE = 1e-2
+
+    if e == None or v == None:
+        return None
+
+    # only boundary edges connected to one and only one face are considered
+    if len(e.link_faces) != 1:
+        raise ValueError("Edge %d contains " % e.index \
+            + "%d faces" % len(e.link_faces))
+    f = e.link_faces[0]
+    cos_angle = edge_face_vertex_cos_angle (e, f, v)
+    if cos_angle:
+        return (cos_angle > (1 - MIN_COS_ANGLE))
+    return None
             
 def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     """Creates face to boundary edges connected to vertex with index i
     and updates boundary edge and angle data accordingly.
-    Returns True if boundary loop is not fully closed, and False otherwise. 
-    In other words, False indicates that last triangle in boundary edge was 
-    filled.
+    Return True if face was created (or exists already), False otherwise.
     """
 
     v = bdata_v[i]
@@ -368,9 +404,9 @@ def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
 
     # Do nothing for unclosed edge loop end points
     if e1old == None:
-        return True
+        return False
     if e2old == None:
-        return True
+        return False
     
     v1 = e1old.other_vert(v)
     v2 = e2old.other_vert(v)
@@ -379,31 +415,24 @@ def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
         + "edges %d and %d, " % (e1old.index, e2old.index) \
         + "other verts %d and %d" % (v1.index, v2.index))
     
-    # If there is already a face that uses these vertices, then stop
+    # Stop if there is already a face that uses these vertices
     flist = bmesh_face_get_partial(bm, [v, v1, v2])
     if flist != None:
         l.debug("Face %d already uses these vertices, " % flist[0].index \
             + "no new face created")
         return True
 
-    # If there already exists edges among vertices, then mark this as last fill
-    lastFill = False
-    if bm.edges.get([v, v1]) != None and \
-        bm.edges.get([v1, v2]) != None and \
-        bm.edges.get([v2, v]) != None:
-            lastFill = True
-    
+    # Create face
     neogeo = bm.faces.new([v, v1, v2])
     # Must update face normal manually to make it coherent
     neogeo.normal_update()
-    
     # Must update indices, othewise index is -1 for all new items
     # and that messes up this algorithm. TODO: optimize somehow?
     bm.edges.index_update()
     bm.faces.index_update()
     bm.faces.ensure_lookup_table()
     bm.edges.ensure_lookup_table()
-
+    # Set face normal direction from any neighbor face
     propagate_face_normal_from_any(neogeo)
     
     l.debug("Created face %d " % bm.faces[-1].index \
@@ -413,11 +442,6 @@ def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     # If a new edge was created, it is the last one
     e = bm.edges[-1]
     l.debug("Last edge index is %d" % e.index)
-
-    # Check if this was the last triangle to be filled. If so, stop.
-    if lastFill:
-        l.debug("Last triangle in this boundary loop was filled!")
-        return False
 
     # Update new neigbor edge info
     iv1 = bdata_v.index(v1)
@@ -442,10 +466,16 @@ def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
         raise ValueError("Did not find edge %d " % e.index
             + "for v2 %d" % v2.index)
     
-    # Recalculate angles
+    # Recalculate angles. If angle calculation fails: keep calm,
+    # make it 180 degrees and carry on.
     bdata_a[iv1] = \
         calc_vert_edge_edge_angle(v1, bdata_e1[iv1], bdata_e2[iv1])
+    if bdata_a[iv1] == None:
+        bdata_a[iv1] = math.radians(180)
+
     bdata_a[iv2] = \
         calc_vert_edge_edge_angle(v2, bdata_e1[iv2], bdata_e2[iv2])
+    if bdata_a[iv2] == None:
+        bdata_a[iv2] = math.radians(180)
     
     return True

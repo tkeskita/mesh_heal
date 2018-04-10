@@ -117,7 +117,6 @@ def select_vertex_index(ilist):
     
     obj = bpy.context.active_object
     bm = bmesh_from_object(obj)
-    bm = bmesh.from_edit_mesh(me)
     bm.verts.ensure_lookup_table()    
 
     # Convert to list if needed, to make it iterable
@@ -128,7 +127,7 @@ def select_vertex_index(ilist):
         bm.verts[i].select = True
         
     bmesh.update_edit_mesh(me, True)    
-
+    
 def obj_index_list(obj_list):
     """Generates index list from argument object list. Use this to convert 
     list of objects to a list of object indices. Index is assumed to be
@@ -221,20 +220,14 @@ def face_ray_cast(obj, f_co, f_dir, f_index, max_ray_len=float_info.max):
     
 def calc_vert_edge_edge_angle(v, e1, e2):
     """Calculates angle between edges e1 and e2, both of which are
-    connected at vertex v.
+    connected at vertex v. Returns None if edges are not connected
+    at vertex v, or if any argument is None.
     """
     
-    # Return max angle if any argument is None, so that argsort does not crash.
     if v == None or e1 == None or e2 == None:
-        return math.radians(180)
-    
-    # Raise error if vertex is not part of e1 and e2
-    if v not in e1.verts:
-        raise ValueError("Vertex %d " % v.index \
-            + "is not connected to edge %d" % e1.index)
-    if v not in e2.verts:
-        raise ValueError("Vertex %d " % v.index \
-            + "is not connected to edge %d" % e2.index)
+        return None
+    if v not in e1.verts or v not in e2.verts:
+        return None
 
     # Generate normalized edge vectors
     if e1.verts[0] == v:
@@ -250,7 +243,7 @@ def calc_vert_edge_edge_angle(v, e1, e2):
     vec2.normalize()
     
     # Calculate angle [rad] between vec1 and vec2
-    # Limit -1.0 <= vecprod <= 1.0 so that acos does not crash
+    # Limit -1.0 <= vecprod <= 1.0 so that value is physical
     vecprod = max(-1.0, min(1.0, vec1 * vec2))
     angle = math.acos(vecprod) 
     l.debug("Angle between edges %d and %d " % (e1.index, e2.index) \
@@ -280,6 +273,18 @@ def face_face_cos_angle(e, f=None, f_neighbor=None):
         if etest[0] != e:
             return None
                     
+    # face center coordinates
+    f_center = f.calc_center_median()
+    f_neighbor_center = f_neighbor.calc_center_median()
+    return edge_vec_vec_cos_angle(e, f_center, f_neighbor_center)
+
+def edge_vec_vec_cos_angle(e, vec1, vec2):
+    """Calculates cosine of angle between two vectors which are
+    orthogonal projections for edge e. This is used to calculate
+    cos(angle) for two faces which share edge e, and vec1 and vec2
+    represent the faces' center coordinate vectors.
+    """
+                    
     # Calculate cos(epsilon) where epsilon is the angle between the two 
     # faces connected by edge e. cos(epsilon) is mathematically angle between
     # vectors e_ortho_f -> f_center and e_ortho_f_neighbor -> f_neighbor_center.
@@ -306,7 +311,7 @@ def face_face_cos_angle(e, f=None, f_neighbor=None):
     vec_e = e.verts[1].co - e.verts[0].co # edge vector
 
     # Calculate orthogonal vector e_ortho_f -> f_center and normalize it
-    f_center = f.calc_center_median() # face center coordinates
+    f_center = vec1 # face center coordinates
     vec_f_center = f_center - e_center 
     project_f = vec_f_center.project(vec_e) # project vec_f to vec_e
     e_ortho_f = e_center + project_f # coordinates for x
@@ -315,7 +320,7 @@ def face_face_cos_angle(e, f=None, f_neighbor=None):
     
     # Similarly to above, calculate orthogonal vector 
     # e_ortho_f_neighbor -> f_neighbor_center and normalize it
-    f_neighbor_center = f_neighbor.calc_center_median()
+    f_neighbor_center = vec2
     vec_f_neighbor_center = f_neighbor_center - e_center 
     project_f_neighbor = vec_f_neighbor_center.project(vec_e)
     e_ortho_f_neighbor = e_center + project_f_neighbor
@@ -327,3 +332,23 @@ def face_face_cos_angle(e, f=None, f_neighbor=None):
     # Limit -1.0 <= cos_epsilon <= 1.0 for physical correctness
     cos_epsilon = max(-1.0, min(1.0, cos_epsilon))
     return cos_epsilon
+
+
+def edge_face_vertex_cos_angle (e, f, v):
+    """Calculates cos(angle) for angle which would be formed
+    between face f (which contains edge e) and a hypothetical connected 
+    triangle face f2, which is hypothetically formed by connecting vertices
+    of edge e to vertex v. Alternatively, v can be thought of as a vertex
+    located at the hypothetical face center. Result is same in both cases.
+    """
+
+    if e == None or f == None or v == None:
+        return None
+
+    if f not in e.link_faces:
+        return None
+
+    # face center coordinates
+    f_center = f.calc_center_median()
+    return edge_vec_vec_cos_angle(e, f_center, v.co)
+    
