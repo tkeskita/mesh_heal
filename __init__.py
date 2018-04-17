@@ -35,12 +35,14 @@ if "bpy" in locals():
     importlib.reload(op_norms)
     importlib.reload(op_clean_mesh)
     importlib.reload(op_fill_holes)
+    importlib.reload(op_sew)
 else:
     import bpy
     from . import (
         op_norms,
         op_clean_mesh,
         op_fill_holes,
+        op_sew,
         )
 
 from .op_gen import *
@@ -79,6 +81,8 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         row.operator("mesh.mesh_heal_fill_holes_sharp", text="MH Fill Holes (Sharp)")
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
+        row = layout.row()
+        row.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
 
 class MeshHealToolBarInEditMode(bpy.types.Panel):
     """Mesh Heal tool bar panel in edit mode"""
@@ -121,6 +125,7 @@ classes = (
     op_norms.MeshHealRecalcNormsOperator,
     op_clean_mesh.MeshHealCleanMeshOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
+    op_sew.MeshHealSewOperator,
     MeshHealToolBarInObjectMode,
     MeshHealToolBarInEditMode,
 )

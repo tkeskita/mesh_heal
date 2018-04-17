@@ -92,7 +92,7 @@ def select_face_index(ilist):
     for i in ilist:    
         bm.faces[i].select = True
         
-    bmesh.update_edit_mesh(me, True)    
+    bmesh.update_edit_mesh(obj.data, True)    
 
 def select_edge_index(ilist):
     """Add argument edge index or list of edge indices to active selection."""
@@ -108,7 +108,7 @@ def select_edge_index(ilist):
     for i in ilist:    
         bm.edges[i].select = True
         
-    bmesh.update_edit_mesh(me, True)    
+    bmesh.update_edit_mesh(obj.data, True)    
 
 def select_vertex_index(ilist):
     """Add argument vertex index or list of vertex indices to 
@@ -126,7 +126,7 @@ def select_vertex_index(ilist):
     for i in ilist:    
         bm.verts[i].select = True
         
-    bmesh.update_edit_mesh(me, True)    
+    bmesh.update_edit_mesh(obj.data, True)    
     
 def obj_index_list(obj_list):
     """Generates index list from argument object list. Use this to convert 
@@ -352,3 +352,17 @@ def edge_face_vertex_cos_angle (e, f, v):
     f_center = f.calc_center_median()
     return edge_vec_vec_cos_angle(e, f_center, v.co)
     
+
+def bmesh_verts_share_edge(bm, v1, v2):
+    """Checks if vertices v1 and v2 in bmesh bm are connected
+    via an edge. First return value is boolean which is True if
+    edge exists and False otherwise. Second return value is the
+    shared edge or None.
+    """
+
+    if v1 == v2:
+        raise ValueError(str(v1) + " and " + str(v2) + " are equal")
+    for e in bm.edges:
+        if (v1 in e.verts) and (v2 in e.verts):
+            return True, e
+    return False, None
