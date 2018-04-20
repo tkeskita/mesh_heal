@@ -78,8 +78,9 @@ def sew_mesh(obj, threshold):
     bm.edges.ensure_lookup_table()
     bm.verts.ensure_lookup_table()
 
-    # Get selected boundary vertices to a list
+    # Get selected boundary vertices and edges to a list
     vlist = [v for v in bm.verts if v.select == True]
+    elist = [e for e in bm.edges if e.select == True]
     nv = len(vlist)
     if nv < 5:
         return None
@@ -89,7 +90,7 @@ def sew_mesh(obj, threshold):
     l.info("Merging %d vertex pairs.." % len(sew_candidates))
     for i, pair in enumerate(sew_candidates):
         l.debug("Sew candidate #%d: " % i + str(pair))
-    n_merges = merge_sew_candidates(bm, vlist, sew_candidates)
+    n_merges = merge_sew_candidates(bm, vlist, elist, sew_candidates)
     
     # Save final bmesh back to object and clean up
     bmesh_to_object(obj, bm)
@@ -113,30 +114,24 @@ def get_sew_candidates(bm, vlist, threshold):
     kd.balance()
     
     sew_candidates = [] # list of vertex pairs eligible to be sewn together
-    processed_verts = [] # list of vertices in sew_candidates
     
     for v in vlist:
-        # Skip if already processed
-        if v in processed_verts:
-            continue
-        
         # Initialize
         v_c_dist = float_info.max # distance to unconnected vertex
         c = None # closest unconnected vertex
         l.debug("Processing vertex " + str(v))
 
-        # 1. Find unprocessed closest unconnected vertex
+        # Find unprocessed closest unconnected vertex
         for (co, index, dist) in kd.find_n(v.co, 4):
             vtest = vlist[index]
             l.debug("  KD found vertex %d, dist %f" % (vtest.index, dist))
             if v == vtest:
                 l.debug("    Vertex is source vertex, ignore")
                 continue
-            if bmesh_verts_share_edge(bm, v, vtest)[0] == False \
-               and vtest not in processed_verts:
+            if bmesh_verts_share_edge(bm, v, vtest)[0] == False:
                 v_c_dist = dist
                 c = vtest
-                l.debug("    Vertex is unprocessed and unconnected, " \
+                l.debug("    Vertex is unconnected, " \
                         + "set c_dist %f" % dist)
                 break
 
@@ -148,11 +143,10 @@ def get_sew_candidates(bm, vlist, threshold):
         v_dist_min = min([e.calc_length() for e in v.link_edges])
         
         # If length ratio is acceptable, add cadidate vertex pair to list
-        # and processed list to make each vertex processed only once
-        if (v_c_dist / v_dist_min) <= threshold:
-            sew_candidates.append([v, c])
-            processed_verts.append(v)
-            processed_verts.append(c)            
+        # along with ratio information
+        ratio = v_c_dist / v_dist_min
+        if ratio <= threshold:
+            sew_candidates.append([ratio, v, c])
             l.debug("  Connection possible, added " \
                 + str(v) + " and " + str(c))
         else:
@@ -161,31 +155,61 @@ def get_sew_candidates(bm, vlist, threshold):
     del kd
     return sew_candidates
 
-def merge_sew_candidates(bm, vlist, sew_candidates):
+def merge_sew_candidates(bm, vlist, elist, sew_candidates):
     """Merges vertex pairs in sew_candidates in bmesh bm.
+    vlist is boundary vertex list and elist boundary edge list.
     Returns number of merged vertices.
     """
 
-    # Move vertices to their merging location
-    n_merges = 0
-    for v, c in sew_candidates:
+    processed = [] # list of processed vertices
+    n_merges = 0 # number of merges done
+    
+    # Merges are done according to increasing ratio value
+    sorted_candidates = sorted(sew_candidates, key = lambda x: x[0])
+    
+    for ratio, v, c in sorted_candidates:
+        if v in processed or c in processed:
+            continue
+
+        # Disallow merging of one-hop-apart neighbors, because
+        # that would create overlapping face
+        if is_one_hop_neighbor(v, c, vlist, elist):
+            continue
+        
         # Move to mid point if both candidates are listed
-        if ([c, v] in sew_candidates) and (v.co != c.co):
+        if ([c, v] in [x[1:3] for x in sew_candidates]):
             mergepoint = (v.co + c.co) / 2.0
             v.co = mergepoint
             c.co = mergepoint
-            n_merges += 1
-        # Otherwise move to last point if only one vertex is listed
+
+        # Otherwise move vertex on top of neighbor
         else:
             v.co = c.co
-            n_merges += 1
 
+        # mark both vertices as processed
+        n_merges += 1
+        processed.append(v)
+        processed.append(c)
+        
     # Merge overlapping vertices
     DIST = 1e-6 # tolerance for overlapping vertex coordinates
     bmesh.ops.remove_doubles(bm, verts=vlist, dist=DIST)
     
     return n_merges
 
-# PROBLEMS:
-# - first in list steals merge from closest
-# - sharp edge issue remains
+def is_one_hop_neighbor(v, c, vlist, elist):
+    """Returns True if vertice v and c are connected by a neighbor
+    vertex in vlist, connected by edges listed in edge list elist.
+    """
+
+    evlist = [e for e in elist if v in e.verts]
+    eclist = [e for e in elist if c in e.verts]
+    # Find if there is an vertex in vlist, whose edges are part of
+    # v edge list and c edge list (so there is one-hop connection).
+    shared_vert = [v for v in vlist if \
+        (v.link_edges[0] in evlist and v.link_edges[1] in eclist) or \
+        (v.link_edges[1] in evlist and v.link_edges[0] in eclist)]
+                   
+    if shared_vert:
+        return True
+    return False
