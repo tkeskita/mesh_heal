@@ -43,7 +43,9 @@ class MeshHealSewOperator(bpy.types.Operator):
         return (ob and ob.type == 'MESH' and context.mode == 'OBJECT')
 
     def execute(self, context):
-        n = sew_mesh(context.active_object, 0.5)
+        settings = bpy.context.scene.mesh_heal
+        threshold = settings.sew_ratio_threshold
+        n = sew_mesh(context.active_object, threshold)
         if n != None:
             self.report({'INFO'}, "Merged %d vertices" % n)
         else:
@@ -85,6 +87,7 @@ def sew_mesh(obj, threshold):
     if nv < 5:
         return None
 
+    l.info("Sew using ratio threshold %f" % threshold)
     l.info("Starting candidate search for %d boundary vertices.." % nv)
     sew_candidates = get_sew_candidates(bm, vlist, threshold)
     l.info("Merging %d vertex pairs.." % len(sew_candidates))

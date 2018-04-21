@@ -58,7 +58,15 @@ if not loaded_default:
     l.info("Enabling %s addon" % addon)
     addon_utils.enable(addon, default_set=True, persistent=True)
 
-
+class MeshHealSettings(bpy.types.PropertyGroup):
+    sew_ratio_threshold = bpy.props.FloatProperty(
+        name="Max Sew Ratio",
+        description="Maximum allowed distance ratio for sewing",
+        default=0.3,
+        precision=5,
+        min=0.001, max=1.0
+    )
+    
 class MeshHealToolBarInObjectMode(bpy.types.Panel):
     """Mesh Heal tool bar panel in object mode"""
     bl_label = "Mesh Heal (MH)"
@@ -74,6 +82,7 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         return obj and obj.type == 'MESH' and context.mode == 'OBJECT'
 
     def draw(self, context):
+        mesh_heal = context.scene.mesh_heal
         layout = self.layout
         row = layout.row()
         row.operator("mesh.mesh_heal_clean_mesh", text="MH Clean Mesh")
@@ -81,9 +90,11 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         row.operator("mesh.mesh_heal_fill_holes_sharp", text="MH Fill Holes (Sharp)")
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
-        row = layout.row()
-        row.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
-
+        col = layout.column()
+        rowsub = col.row(align=True)        
+        rowsub.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
+        rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
+        
 class MeshHealToolBarInEditMode(bpy.types.Panel):
     """Mesh Heal tool bar panel in edit mode"""
     bl_label = "Mesh Heal (MH)"
@@ -122,18 +133,25 @@ class MeshHealToolBarInEditMode(bpy.types.Panel):
 # Registration
 
 classes = (
+    MeshHealToolBarInObjectMode,
+    MeshHealToolBarInEditMode,
     op_norms.MeshHealRecalcNormsOperator,
     op_clean_mesh.MeshHealCleanMeshOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
-    MeshHealToolBarInObjectMode,
-    MeshHealToolBarInEditMode,
+    MeshHealSettings,
 )
     
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+
+    bpy.types.Scene.mesh_heal = \
+        bpy.props.PointerProperty(type = MeshHealSettings)
     
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
+
+    del bpy.types.Scene.mesh_heal
+    
