@@ -40,7 +40,7 @@ class MeshHealFillHolesSharpOperator(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         ob = context.active_object
-        return (ob and ob.type == 'MESH' and context.mode == 'OBJECT')
+        return (ob and ob.type == 'MESH' and context.mode in {'OBJECT','EDIT_MESH'})
 
     def execute(self, context):
         n = fill_holes_sharp(context.active_object)

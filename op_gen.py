@@ -268,9 +268,7 @@ def face_face_cos_angle(e, f=None, f_neighbor=None):
     else:
         # Make sure edge connects given two faces before continuing 
         etest = [etest for etest in f.edges if etest in f_neighbor.edges]
-        if etest == []:
-            return None
-        if etest[0] != e:
+        if e not in etest:
             return None
                     
     # face center coordinates

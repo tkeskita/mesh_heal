@@ -36,6 +36,7 @@ if "bpy" in locals():
     importlib.reload(op_clean_mesh)
     importlib.reload(op_fill_holes)
     importlib.reload(op_sew)
+    importlib.reload(op_delete_overlap)
 else:
     import bpy
     from . import (
@@ -43,6 +44,7 @@ else:
         op_clean_mesh,
         op_fill_holes,
         op_sew,
+        op_delete_overlap,
         )
 
 from .op_gen import *
@@ -84,16 +86,22 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
     def draw(self, context):
         mesh_heal = context.scene.mesh_heal
         layout = self.layout
+
+        row = layout.row()
+        row.operator("mesh.mesh_heal_delete_overlap", \
+            text="MH Delete Overlapping Neighbor Faces")
+
+        col = layout.column()
+        rowsub = col.row(align=True)        
+        rowsub.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
+        rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
+
         row = layout.row()
         row.operator("mesh.mesh_heal_clean_mesh", text="MH Clean Mesh")
         row = layout.row()
         row.operator("mesh.mesh_heal_fill_holes_sharp", text="MH Fill Holes (Sharp)")
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
-        col = layout.column()
-        rowsub = col.row(align=True)        
-        rowsub.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
-        rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
         
 class MeshHealToolBarInEditMode(bpy.types.Panel):
     """Mesh Heal tool bar panel in edit mode"""
@@ -139,6 +147,7 @@ classes = (
     op_clean_mesh.MeshHealCleanMeshOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
+    op_delete_overlap.MeshHealDeleteOverlapOperator,
     MeshHealSettings,
 )
     
