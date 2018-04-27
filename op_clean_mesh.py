@@ -28,7 +28,6 @@
 # Initialization
 from .op_gen import *
 
-
 # ----------------------------------------------------------------------------
 
 class MeshHealCleanMeshOperator(bpy.types.Operator):
@@ -42,10 +41,33 @@ class MeshHealCleanMeshOperator(bpy.types.Operator):
         return (ob and ob.type == 'MESH' and context.mode == 'OBJECT')
 
     def execute(self, context):
+        saved_mode = context.active_object.mode
         n = clean_mesh(context.active_object)
+        bpy.ops.object.mode_set(mode = saved_mode)
         self.report({'INFO'}, "%d problem verts selected" % n)
         return {'FINISHED'}
 
+class MeshHealRemoveNonManifoldOperator(bpy.types.Operator):
+    """Remove Non-manifold (Mesh Heal)"""
+    bl_idname = "mesh.mesh_heal_remove_non_manifold"
+    bl_label = "MH Remove Non-manifold"
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return (ob and ob.type == 'MESH' and \
+            context.mode in {'OBJECT','EDIT_MESH'})
+
+    def execute(self, context):
+        saved_mode = context.active_object.mode
+        mdist = bpy.context.scene.mesh_heal.vert_merge_distance
+        nv0 = len(context.active_object.data.vertices)
+        clean_mesh_remove_non_manifold(context.active_object, mdist)
+        nv = len(context.active_object.data.vertices)
+        bpy.ops.object.mode_set(mode = saved_mode)
+        self.report({'INFO'}, "%d verts deleted" % (nv0 - nv))
+        return {'FINISHED'}
+    
 
 def clean_mesh(obj):
     """Main mesh cleaning routine. This routine attempts 
@@ -70,12 +92,12 @@ def clean_mesh(obj):
 
     n_verts = 1 # initialize number of bad vertices
     i = 0 # clean-up round counter
-
+    max_iter = 2
     while n_verts > 0:
         i += 1
         
         # Give up after two iterations
-        if i > 2:
+        if i > max_iter:
             break
         
         # Delete bad faces and remove dangling edges and verts
@@ -91,8 +113,9 @@ def clean_mesh(obj):
         # bpy.ops.mesh.edge_face_add() # This doesn't work either
         # bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', \
         #                                    ngon_method='BEAUTY')
-        # This does not always work correctly
-        bpy.ops.mesh.fill_holes(sides=0)
+        # bpy.ops.mesh.fill_holes(sides=0) # not working always
+        bpy.ops.mesh.mesh_heal_fill_holes_sharp() # own method, slow
+        
         bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', \
                                            ngon_method='BEAUTY')
         # TODO: Dig down why face filling routines fail
@@ -100,15 +123,13 @@ def clean_mesh(obj):
         # Vertex deletion (or edge collapse) are destructive and 
         # (combined with intersecting faces check) can potentially
         # recursively eat away a lot of geometry. Not good.
-        # This is left here just to document this attempt.
-        if i > 2:
+        # This is never run, left here just to document this attempt.
+        if i > max_iter:
             clean_mesh_select_bad_verts()     
             bpy.ops.mesh.delete(type='VERT') # or edge collapse
             # Fill holes with faces, where possible
             clean_mesh_select_bad_verts()        
-            # bpy.ops.mesh.fill()
-            # bpy.ops.mesh.edge_face_add()
-            bpy.ops.mesh.fill_holes(sides=0)
+            bpy.ops.mesh.fill_holes(sides=0) # or another fill method
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', \
                                                ngon_method='BEAUTY')
 
@@ -148,3 +169,55 @@ def clean_mesh_select_bad_verts():
     # Select also all non-manifold boundaries and faces
     bpy.ops.mesh.select_non_manifold(use_wire=True, use_boundary=True, \
     use_multi_face=True, use_non_contiguous=False, use_verts=False) 
+    
+def clean_mesh_select_non_manifold_verts():
+    """Selects non-manifold vertices in mesh. Non-manifold vertices 
+    include vertices in intersecting and multiple overlapping faces, 
+    wires and single vertices, but not boundary vertices. 
+    """
+
+    bpy.ops.mesh.select_all(action='DESELECT')
+
+    # Select intersecting faces
+    bpy.ops.mesh.select_mode(type='FACE')
+    bpy.ops.mesh.print3d_check_intersect() # Find intersecting faces
+    bpy.ops.mesh.print3d_select_report() # Select intersecting faces
+    bpy.ops.mesh.select_mode(use_extend=True, use_expand=False, type='VERT')
+
+    # Select also all non-manifold boundaries and faces
+    bpy.ops.mesh.select_non_manifold(use_wire=True, use_boundary=False, \
+    use_multi_face=True, use_non_contiguous=False, use_verts=False) 
+
+    
+def clean_mesh_remove_non_manifold(obj, mdist):
+    """Merges closeby vertices, then removes non-manifold vertices, 
+    edges and faces from object obj. mdist is vertex merge distance.
+    """
+
+    # go to vertex select mode and select all
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
+    bpy.ops.mesh.select_all(action='SELECT')
+
+    # initial clean-up, merge closeby vertices
+    bpy.ops.mesh.remove_doubles(threshold=mdist)
+
+    # delete overlapping neighbor faces (and dangling edges and verts)
+    bpy.ops.mesh.mesh_heal_delete_overlap()
+    
+    # Delete bad faces
+    clean_mesh_select_non_manifold_verts()
+    bpy.ops.mesh.delete(type='ONLY_FACE')
+
+    # Delete edges that share >2 faces
+    bpy.ops.mesh.select_non_manifold(use_wire=False, use_boundary=False, \
+    use_multi_face=True, use_non_contiguous=False, use_verts=False) 
+    bpy.ops.mesh.delete(type='EDGE')
+
+    # Remove dangling edges and verts
+    # Must go to object mode to make final vertex counting correct.
+    # TODO: Check and report if it's a bug.
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.mesh.print3d_clean_isolated()
+
+    

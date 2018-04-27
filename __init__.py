@@ -61,6 +61,13 @@ if not loaded_default:
     addon_utils.enable(addon, default_set=True, persistent=True)
 
 class MeshHealSettings(bpy.types.PropertyGroup):
+    vert_merge_distance = bpy.props.FloatProperty(
+        name="Vertex Merge Distance",
+        description="Maximum distance for merging closeby vertices",
+        default=0.001,
+        precision=5,
+        min=0.0, max=float_info.max
+    )
     sew_ratio_threshold = bpy.props.FloatProperty(
         name="Max Sew Ratio",
         description="Maximum allowed distance ratio for sewing",
@@ -87,19 +94,24 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         mesh_heal = context.scene.mesh_heal
         layout = self.layout
 
+        col = layout.column()
+        rowsub = col.row(align=True)
+        rowsub.operator("mesh.mesh_heal_remove_non_manifold", text="Remove Non-Manifold")
+        rowsub.prop(mesh_heal, "vert_merge_distance", text="distance")
+
         row = layout.row()
         row.operator("mesh.mesh_heal_delete_overlap", \
-            text="MH Delete Overlapping Neighbor Faces")
+            text="Delete Overlapping Neighbor Faces")
 
         col = layout.column()
         rowsub = col.row(align=True)        
-        rowsub.operator("mesh.mesh_heal_sew", text="MH Sew Mesh")
+        rowsub.operator("mesh.mesh_heal_sew", text="Sew Mesh")
         rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
 
         row = layout.row()
-        row.operator("mesh.mesh_heal_clean_mesh", text="MH Clean Mesh")
+        row.operator("mesh.mesh_heal_clean_mesh", text="Clean Mesh")
         row = layout.row()
-        row.operator("mesh.mesh_heal_fill_holes_sharp", text="MH Fill Holes (Sharp)")
+        row.operator("mesh.mesh_heal_fill_holes_sharp", text="Fill Holes (Sharp)")
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
         
@@ -121,7 +133,7 @@ class MeshHealToolBarInEditMode(bpy.types.Panel):
         layout = self.layout
         box = layout.box()
         col = box.column(align=True)
-        col.label(text="Mesh Heal is not", icon='ERROR')
+        col.label(text="TODO: Make", icon='ERROR')
         col.label(text="available in edit mode")
 
         
@@ -145,6 +157,7 @@ classes = (
     MeshHealToolBarInEditMode,
     op_norms.MeshHealRecalcNormsOperator,
     op_clean_mesh.MeshHealCleanMeshOperator,
+    op_clean_mesh.MeshHealRemoveNonManifoldOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
     op_delete_overlap.MeshHealDeleteOverlapOperator,

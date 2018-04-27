@@ -43,8 +43,7 @@ class MeshHealSewOperator(bpy.types.Operator):
         return (ob and ob.type == 'MESH' and context.mode == 'OBJECT')
 
     def execute(self, context):
-        settings = bpy.context.scene.mesh_heal
-        threshold = settings.sew_ratio_threshold
+        threshold = bpy.context.scene.mesh_heal.sew_ratio_threshold
         n = sew_mesh(context.active_object, threshold)
         if n != None:
             self.report({'INFO'}, "Merged %d vertices" % n)
@@ -67,12 +66,12 @@ def sew_mesh(obj, threshold):
     """
 
     # Select non-manifold boundaries
-    bpy.ops.object.mode_set(mode = 'EDIT')    
-    bpy.ops.mesh.select_all(action = 'DESELECT')
+    bpy.ops.object.mode_set(mode='EDIT')    
+    bpy.ops.mesh.select_all(action='DESELECT')
     bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='EDGE')
     bpy.ops.mesh.select_non_manifold(use_wire=False, use_boundary=True, \
     use_multi_face=False, use_non_contiguous=False, use_verts=False) 
-    bpy.ops.object.mode_set(mode = 'OBJECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
 
     # Initialization, create bmesh
     bm = bmesh_copy_from_object(obj)
@@ -88,9 +87,9 @@ def sew_mesh(obj, threshold):
         return None
 
     l.info("Sew using ratio threshold %f" % threshold)
-    l.info("Starting candidate search for %d boundary vertices.." % nv)
+    l.info("Starting neighbor search for %d boundary vertices.." % nv)
     sew_candidates = get_sew_candidates(bm, vlist, threshold)
-    l.info("Merging %d vertex pairs.." % len(sew_candidates))
+    l.info("Processing %d vertex pairs.." % len(sew_candidates))
     for i, pair in enumerate(sew_candidates):
         l.debug("Sew candidate #%d: " % i + str(pair))
     n_merges = merge_sew_candidates(bm, vlist, elist, sew_candidates)
@@ -98,7 +97,7 @@ def sew_mesh(obj, threshold):
     # Save final bmesh back to object and clean up
     bmesh_to_object(obj, bm)
     bm.free()
-    bpy.ops.object.mode_set(mode = 'OBJECT')
+    bpy.ops.object.mode_set(mode='OBJECT')
     return n_merges
 
 def get_sew_candidates(bm, vlist, threshold):
