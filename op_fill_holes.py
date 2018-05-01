@@ -19,8 +19,7 @@
 # <pep8-80 compliant>
 
 # ----------------------------------------------------------------------------
-# Algorithms to fill boundary holes in meshes. Try these if Blender's
-# official fill routines don't work for you.
+# Algorithm to fill boundary loops in meshes.
 # ----------------------------------------------------------------------------
 
 # from mesh_heal.op_fill_holes import *
@@ -51,60 +50,143 @@ class MeshHealFillHolesSharpOperator(bpy.types.Operator):
 def fill_holes_sharp(obj):
     """Fills boundary edges in object obj with triangles by a
     'sharpest angle first' approach. The method processes each 
-    continuous boundary edge loop (open or closed) and fills it with
+    continuous boundary edge loop and fills it with
     triangles by connecting edge vertices. Connections are done in 
     sharpness order, so that two edges connected to the vertex with 
     sharpest edge angle are connected by a face. Connections are not 
-    made for vertex pairs which are mutually occluded (face exists 
-    between vertices. Filling is repeated until all boundary edges that 
-    can be processed, have been processed.
+    made for vertex pairs which are mutually occluded (a neighboring face 
+    of the edge loop exists between vertices). Triangle filling is repeated 
+    until all boundary edges that can be processed, have been processed.
     """
     
     # Initialization, create bmesh
     bpy.ops.object.mode_set(mode = 'OBJECT')
-    
-    bm = bmesh_copy_from_object(obj) # CHECMKE: bmesh_from_object?
-    bm.faces.ensure_lookup_table()
-    bm.edges.ensure_lookup_table()
-    bm.verts.ensure_lookup_table()
 
+    # Load original mesh
+    bm_orig = bmesh_from_object(obj)
+    bm_orig.faces.ensure_lookup_table()
+    bm_orig.edges.ensure_lookup_table()
+    bm_orig.verts.ensure_lookup_table()
+
+    bm_filled = bmesh.new() # Empty bmesh for saving filled holes
+    
     processed_edges = [] # List of processed edges
-    n_unprocessed = 0 # number of unprocessed edges
-    max_edges = len(bm.edges) # maximum number of edges in original mesh
+    max_edges = len(bm_orig.edges) # maximum number of edges in original mesh
     iter = 0
     while True:
         iter += 1
-        edges = FHS_get_continuous_boundary_edges(bm, processed_edges)
+        l.info("=====")
+        l.info("Loop fill iteration %d" % iter)
+        edges = FHS_get_continuous_boundary_edges(bm_orig, processed_edges)
         if edges == []:
-            l.info("Loop fill iteration %d" % iter \
-                + ", no unprocessed boundary edges found!")
+            l.info("No unprocessed boundary edges found! Stopping.")
             break
+
         # Stop if edges contains a newly created edge
-        new_edges = [e for e in edges if e.index > max_edges]
-        if len(new_edges) > 0:
-            l.info("Loop fill iteration %d" % iter \
-                + ", no more original boundary edges found!")
-            break            
-        l.debug("Boundary %d" % iter \
-            + ", found %d connected boundary edges" % len(edges))
+        n_new_edges = [e for e in edges if e.index > max_edges]
+        if len(n_new_edges) > 0:
+            l.info("No more original boundary edges found! Stopping.")
+            break
+
+        # Skip if they do not for a closed loop
+        if not FHS_edges_form_closed_loop(bm_orig, edges):
+            l.debug("Edges do not form a closed loop, skip.")
+            continue
         
+        l.debug("Found %d connected boundary edges" % len(edges))
+
+        # Create subset of mesh and boundary edges of subset mesh
+        bm_sub, edges_sub = FHS_create_subset_mesh(edges)
+
+        # Create BVHTree of subset mesh for ray casting
+        tree = mathutils.bvhtree.BVHTree.FromBMesh(bm_sub)
+    
         # Generate vertex data and try to fill holes
         bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn = \
-            FHS_generate_vertex_data(obj, edges)
-        rval = FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, \
+            FHS_generate_vertex_data(tree, edges_sub)
+        rval = FHS_fill_holes_to_boundary_edge_path(bm_sub, bm_filled, bdata_v, \
             bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn)
-        l.info("Boundary %d:" % iter \
-            + " Failed %d, %d edges" % (rval, len(edges)))
-        n_unprocessed += rval
+        for e in edges_sub:
+            if len(e.link_faces) == 1:
+                l.debug("Failed edge %d" % e.index)
+        l.info("Failed %d out of %d edges" % (rval, len(edges)))
+
         del [bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed]
         del [bdata_conn, edges]
+        bm_sub.free()
+        del tree
+
+
+    # Copy all new faces to original bmesh
+    for f in bm_filled.faces:
+        bmesh_copy_face(f, bm_orig)
+
+    # Select and count remaining boundary edges
+    n_unprocessed = 0
+    for e in bm_orig.edges:
+        if len(e.link_faces) == 1:
+            e.select = True
+            n_unprocessed +=1
         
     # Save final bmesh back to object and clean up
-    bmesh_to_object(obj, bm)
-    bm.free()
+    bmesh_to_object(obj, bm_orig)
+    bm_orig.free()
+    bm_filled.free()
     bpy.ops.object.mode_set(mode = 'OBJECT')
     return n_unprocessed
+
+def FHS_create_subset_mesh(edges):
+    """Returns a subset bmesh (and subset edges) that includes only 
+    faces connected to argument edges.
+    """
+
+    bm_sub = bmesh.new()
     
+    src_faces = [] # source face list
+    vmap = {} # mapping dictionary from old to new vertices
+    
+    # Find source faces that connect to vertices of edges
+    for e in edges:
+        for v in e.verts:
+            for f in v.link_faces:
+                if f in src_faces:
+                    continue
+                src_faces.append(f)
+
+    # Construct subset mesh consisting of source faces
+    for f in src_faces:
+        nverts = [] # vertex list for a face
+        for v in f.verts:
+            if v not in vmap:
+                nv = bm_sub.verts.new(v.co)
+                bm_sub.verts.index_update()
+                bm_sub.verts.ensure_lookup_table()
+                # vmap[v] = nv
+                vmap[v] = bm_sub.verts[-1]
+            else:
+                nv = vmap[v]
+            nverts.append(nv)
+        bm_sub.faces.new(nverts)
+
+    # Update subset mesh lookup tables to prevent index "-1" messing indexing
+    bm_sub.faces.index_update()
+    bm_sub.edges.index_update()
+    bm_sub.verts.index_update()
+    bm_sub.faces.ensure_lookup_table()
+    bm_sub.edges.ensure_lookup_table()
+    bm_sub.verts.ensure_lookup_table()
+    
+    # Find subset edges that correspond to argument edges
+    edges_sub = []
+    for es in edges:
+        v1 = vmap[es.verts[0]]
+        v2 = vmap[es.verts[1]]
+        e = [e for e in bm_sub.edges if (v1 in e.verts and v2 in e.verts)][0]
+        edges_sub.append(e)
+
+    return bm_sub, edges_sub
+
+
 def FHS_get_continuous_boundary_edges(bm, processed_edges):
     """Finds first continuous set of boundary edges in bmesh bm
     and returns a list of edge objects that are part of that
@@ -136,6 +218,29 @@ def FHS_get_continuous_boundary_edges(bm, processed_edges):
     
     return boundary_edges
 
+def FHS_edges_form_closed_loop(bm, edges):
+    """Returns True if edges form a closed edge loop in bmesh bm,
+    otherwise returns False.
+    """
+
+    # dictionary for storing vertex occurrence count
+    vdict = {}
+
+    for e in edges:
+        for v in e.verts:
+            if v not in vdict:
+                vdict[v] = 1
+            else:
+                vdict[v] +=1
+
+    for v in vdict:
+        if vdict[v] != 2:
+            l.debug("Edge loop is NOT closed")
+            return False
+
+    l.debug("Edge loop is closed")
+    return True
+                
 def FHS_get_next_boundary_edge(v0, e0, boundary_edges, processed_edges):
     """Finds next boundary edge from edge e0 which is connected
     to edge's vertex v0, adds it to boundary_edges list and calls 
@@ -181,9 +286,10 @@ def FHS_get_next_boundary_edge(v0, e0, boundary_edges, processed_edges):
         
     return None
 
-def FHS_generate_vertex_data(obj, edges):
+def FHS_generate_vertex_data(source, edges):
     """Generates allowed connectivity data and boundary vertex data
     for vertices of boundary edge path edges for object obj.
+    source is a BVHTree or object for ray casting.
     
     Returned boundary vertex data include:
     bdata_v - vertex object 
@@ -211,17 +317,16 @@ def FHS_generate_vertex_data(obj, edges):
     # Set up bdata_conn
     nv = len(bdata_v)
     bdata_conn = numpy.full((nv, nv), True, dtype=bool)
-    FRAC = 0.999 # fraction of length of ray direction for ray tracing
 
     for i in range(nv):
         for j in range(i + 1, nv):
             l.debug("Ray casting: vertex %d to %d" \
                 % (bdata_v[i].index, bdata_v[j].index))
-            f_co = bdata_v[i].co # ray start point
-            f_dir = bdata_v[j].co - bdata_v[i].co # ray direction vector
-            f_index = obj_index_list(bdata_v[i].link_faces) # faces of vert i
+            co = bdata_v[i].co # ray start point
+            ray_dir = bdata_v[j].co - bdata_v[i].co # ray direction vector
+            fi_list = obj_index_list(bdata_v[i].link_faces) # faces of vert i
             ok, hit_co, hit_no, hit_index = \
-                face_ray_cast(obj, f_co, f_dir, f_index, f_dir.length*FRAC)
+                face_ray_cast(source, co, ray_dir, fi_list, ray_dir.length)
 
             # If ray casting hit a surface, then mark connection i,j as 
             # forbidden
@@ -254,10 +359,12 @@ def FHS_populate_vert_data(v, e, bdata_v, bdata_e1, bdata_e2, bdata_a):
         bdata_e2.append(None)
         bdata_a.append(math.radians(180))
 
-def FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, bdata_e1, bdata_e2, \
-        bdata_a, bdata_processed, bdata_conn):
+def FHS_fill_holes_to_boundary_edge_path(bm, bm_filled, bdata_v, \
+        bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn):
     """Fills triangle faces to boundary edge path using argument data.
-    Arguments are described in function FHS_generate_vertex_data().
+    bm is bmesh used for determining what to fill. Fill faces are
+    copied to bm_filled.
+    Other arguments are described in function FHS_generate_vertex_data().
     Returns number of failed faces (failed fills).
     """
 
@@ -281,6 +388,9 @@ def FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, bdata_e1, bdata_e2, \
             v = bdata_v[i]
             e1 = bdata_e1[i]
             e2 = bdata_e2[i]
+            l.debug("Processing vertex %d, " % v.index \
+                    + "edges %d and %d" % (e1.index, e2.index))
+            
             # Get other vertices, if there are edges
             ov1 = None
             if e1 != None:
@@ -291,37 +401,47 @@ def FHS_fill_holes_to_boundary_edge_path(bm, bdata_v, bdata_e1, bdata_e2, \
             # Get next vertice after other vertices
             oov1 = FHS_other_vert(ov1, e1, bdata_v, bdata_e1, bdata_e2)
             oov2 = FHS_other_vert(ov2, e2, bdata_v, bdata_e1, bdata_e2)
+            l.debug("other vertices: %d and %d," % (ov1.index, ov2.index) \
+                + "oo %d and %d" % (oov1.index, oov2.index))
 
-            # If a face would be created between vertices v, ov1 and ov2,
-            # then ov1 would later on need to be connected with oov2, and
-            # ov2 with oov1. Therefore face creation is allowed only if those
-            # connections are allowed according to connectivity matrix.
-            # Also connection between ov1 and ov2 must be allowed.
+            # Connection between ov1 and ov2 must be allowed
+            test1 = FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, ov2)
+
+            # At least one fill direction must remain possible:
+            # If a face would be created among vertices v, ov1 and ov2,
+            # then ov1 would later on need to be connected with oov2, or
+            # ov2 with oov1.
+            test2 = FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, oov2)
+            test3 = FHS_connection_is_allowed(bdata_v, bdata_conn, ov2, oov1)
+            
             # Additionally, connection is not made if it creates sharp edges.
-            if FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, oov2) and \
-                FHS_connection_is_allowed(bdata_v, bdata_conn, ov2, oov1) and \
-                FHS_connection_is_allowed(bdata_v, bdata_conn, ov1, ov2) and \
-                not FHS_connection_creates_sharp_edge(e1, ov2) and \
-                not FHS_connection_creates_sharp_edge(e2, ov1):
-                    addition = FHS_connect(bm, i, bdata_v, bdata_e1, \
-                        bdata_e2, bdata_a)
-                    bdata_processed[i] = True
-                    if addition:
-                        n_unprocessed -= 1
-                    break # get out of for loop
+            # This can happen e.g. when boundary has inward extension with
+            # three edges connected to the inward vertex.            
+            test4 = not FHS_connection_creates_sharp_edge(e1, ov2)
+            test5 = not FHS_connection_creates_sharp_edge(e2, ov1)
+            
+            if not test1:
+                l.debug("test1 failed")
+            if not test2:
+                l.debug("test2 failed")
+            if not test3:
+                l.debug("test3 failed")
+            if not test4:
+                l.debug("test4 failed")
+            if not test5:
+                l.debug("test5 failed")
+            
+            if test1 and (test2 or test3) and test4 and test5:
+                addition = FHS_connect(bm, bm_filled, i, bdata_v, bdata_e1, \
+                    bdata_e2, bdata_a)
+                bdata_processed[i] = True
+                if addition:
+                    n_unprocessed -= 1
+                break # get out of for loop
         # If no new connections (edges) were made, then stop
         if not addition:
             break
 
-    # Add remaining boundary edges to selection
-    n_unprocessed = 0
-    for e in set(bdata_e1 + bdata_e2):
-        if e != None:
-            l.debug("%d %d" % (e.index, len(e.link_faces)))
-            if len(e.link_faces) == 1:
-                l.debug("Select remaining boundary edge %d" % e.index)
-                e.select = True
-                n_unprocessed += 1
     return n_unprocessed
 
 def FHS_other_vert(v, e, bdata_v, bdata_e1, bdata_e2):
@@ -392,7 +512,7 @@ def FHS_connection_creates_sharp_edge(e, v):
         return (cos_angle > (1 - MIN_COS_ANGLE))
     return None
             
-def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
+def FHS_connect(bm, bm_filled, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     """Creates face to boundary edges connected to vertex with index i
     and updates boundary edge and angle data accordingly.
     Return True if face was created (or exists already), False otherwise.
@@ -427,13 +547,17 @@ def FHS_connect(bm, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     # Must update face normal manually to make it coherent
     neogeo.normal_update()
     # Must update indices, othewise index is -1 for all new items
-    # and that messes up this algorithm. TODO: optimize somehow?
+    # and that messes up this algorithm.
     bm.edges.index_update()
     bm.faces.index_update()
     bm.faces.ensure_lookup_table()
     bm.edges.ensure_lookup_table()
-    # Set face normal direction from any neighbor face
-    propagate_face_normal_from_any(neogeo)
+    # Set face normal direction from any neighbor face.
+    # Not necessary here, so commented out.
+    # propagate_face_normal_from_any(neogeo)
+
+    # Copy face to fill bmesh
+    bmesh_copy_face(neogeo, bm_filled)
     
     l.debug("Created face %d " % bm.faces[-1].index \
             + "connecting vertices %d " % v.index \

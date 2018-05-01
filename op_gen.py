@@ -27,6 +27,7 @@
 import importlib
 import bpy
 import bmesh
+import mathutils
 import array
 import numpy
 import math
@@ -156,7 +157,7 @@ def bmesh_face_get_partial(bm, vlist):
         return None
     return f
 
-def probe_hit_face(obj, bm, f_co, f_dir, f_index):
+def obj_probe_hit_face(obj, bm, f_co, f_dir, f_index):
     """Casts a ray towards f_dir from coordinates f_co and
     checks if the normal of the face hit by ray is towards this face.
     f_index is the face index number of source face at f_co, used for 
@@ -182,42 +183,72 @@ def probe_hit_face(obj, bm, f_co, f_dir, f_index):
     else:
         return (True, hit_index)
 
-def face_ray_cast(obj, f_co, f_dir, f_index, max_ray_len=float_info.max):
-    """Face based wrapper for bpy.types.Object.ray_cast().
-    Guarantees that ray cast from f_co towards f_dir will not hit
-    face(s) with index in list of indices f_index.
+def face_ray_cast(source, co, ray_dir, fi_list, max_ray_len=float_info.max):
+    """Face based wrapper for mathutils.bvhtree.ray_cast() (source is 
+    a BVHTree) and bpy.types.Object.ray_cast() (source is an Object).  
+    Guarantees that ray cast from co towards ray_dir will not hit
+    face(s) with index in list of indices fi_list.
     This is used to prevent self-collision for ray casting.
     """
 
-    # Convert f_index to list if needed, to make it iterable
-    if not isinstance(f_index, list):
-        f_index = [f_index]
+    # Convert fi_list to list if needed, to make it iterable
+    if not isinstance(fi_list, list):
+        fi_list = [fi_list]
         
-    # EPS is length of f_dir that f_co is projected as a starting 
-    # point used in ray casting
-    EPS = 1e-6
+    # EPS is length of ray_dir that co is projected as a starting 
+    # point used in ray casting.
+    EPS0 = 1e-6
+    EPS = EPS0
     
-    ray_start = f_co
-    ok, hit_co, hit_no, hit_index = \
-        obj.ray_cast(ray_start + EPS*f_dir, f_dir, max_ray_len)
-    
-    # Twisted faces and other mesh issues can cause ray hitting itself.
+    ray_start = co
+
+    # ray_cast returns slighty different things for Objects and BVHTrees
+    if isinstance(source, bpy.types.Object):
+        ok, hit_co, hit_no, hit_index = \
+            source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
+    elif isinstance(source, mathutils.bvhtree.BVHTree):
+        hit_co, hit_no, hit_index, hit_length = \
+            source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
+        if hit_co:
+            ok = True
+        else:
+            ok = False
+    else:
+        raise TypeError("source type is not compatible")
+            
+    # Twisted faces can cause ray hitting itself.
     # If that happens, then cast another ray starting from near hit point.
     iter = 0
     maxiter = 12
-    while hit_index in f_index and iter < maxiter:
-        l.debug("Cast ray hit source face %d, EPS %f" % (hit_index, EPS))
+    while hit_index in fi_list and iter < maxiter:
         ray_start = hit_co
         EPS *= 2 # Increase EPS to speed up convergence
-        ok, hit_co, hit_no, hit_index = \
-            obj.ray_cast(ray_start + EPS*f_dir, f_dir, max_ray_len)    
+        if isinstance(source, bpy.types.Object):
+            ok, hit_co, hit_no, hit_index = \
+                source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
+        elif isinstance(source, mathutils.bvhtree.BVHTree):
+            hit_co, hit_no, hit_index, hit_length = \
+                source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
+            if hit_co:
+                ok = True
+            else:
+                ok = False
         iter += 1
     
     if iter == maxiter:
         raise ValueError("Cast ray reached maximum iterations %d" % maxiter)
-        
+
+    if ok:
+        # If hit coordinates are close to target coordinates,
+        # then don't count that as a hit.
+        # TODO: Check why BVHTree doesn't seem to honor max ray length?
+        if (hit_co - co).length / max_ray_len > (1 - EPS0):
+            l.debug("Max ray length limit reached")
+            return False, None, None, None
+    
     return ok, hit_co, hit_no, hit_index
     
+
 def calc_vert_edge_edge_angle(v, e1, e2):
     """Calculates angle between edges e1 and e2, both of which are
     connected at vertex v. Returns None if edges are not connected
@@ -363,4 +394,55 @@ def bmesh_verts_share_edge(bm, v1, v2):
     for e in bm.edges:
         if (v1 in e.verts) and (v2 in e.verts):
             return True, e
+    return False, None
+
+def bmesh_copy_face(src_flist, bm):
+    """Creates a copy of faces in face list src_flist to bmesh bm."""
+
+    from .op_norms import propagate_face_normal_from_any
+    
+    vlist = [] # list of face vertices in destination bmesh
+    flist = [] # list of new faces in destination bmesh
+    
+    # Convert flist to list if needed, to make it iterable
+    if not isinstance(src_flist, list):
+        src_flist = [src_flist]
+
+    for f in src_flist:
+        for v in f.verts:
+            test, vdst = bmesh_vert_exists_at(bm, v.co)
+            if test:
+                if vdst in vlist:
+                    raise ValueError("Vertex %d alredy in list" % v.index)
+                vlist.append(vdst)
+            else:
+                nv = bm.verts.new(v.co)
+                vlist.append(nv)
+
+        nf = bm.faces.new(vlist)
+        nf.normal_update()
+        flist.append(nf)
+
+    # Finally update lookup tables and propagate normals from neighbors
+    bm.faces.index_update()
+    bm.faces.ensure_lookup_table()
+
+    for f in flist:
+        propagate_face_normal_from_any(nf)
+
+def bmesh_vert_exists_at(bm, co):
+    """Finds a vertex in bm located very close to coordinates co.
+    First return value is True if vertex is found and False otherwise.
+    Second return value is the vertex, or None if none was found.
+    """
+
+    # tolerance allowed for difference in vertex location
+    EPS = 1e-6
+    
+    # Decided to use absolute tolerance to test for equality
+    v = [v for v in bm.verts if (v.co - co).length < EPS]
+    # relative error tolerance alternative would be something like
+    # if 2.0 * (v.co - co).length / (v.co.length + co.length) < EPS]
+    if len(v) > 0:
+        return True, v[0]
     return False, None

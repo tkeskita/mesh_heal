@@ -110,7 +110,7 @@ def clean_mesh(obj):
         clean_mesh_select_bad_verts()        
         # Sometimes fill connects totally unconnected vertices
         # bpy.ops.mesh.fill()
-        # bpy.ops.mesh.edge_face_add() # This doesn't work either
+        # bpy.ops.mesh.edge_face_add() # This doesn't work always right
         # bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', \
         #                                    ngon_method='BEAUTY')
         # bpy.ops.mesh.fill_holes(sides=0) # not working always

@@ -39,14 +39,17 @@ class MeshHealDeleteOverlapOperator(bpy.types.Operator):
         return (ob and ob.type == 'MESH' and context.mode in {'OBJECT','EDIT_MESH'})
 
     def execute(self, context):
+        saved_mode = context.active_object.mode
+        bpy.ops.object.mode_set(mode = 'OBJECT')
         n = delete_overlap(context.active_object)
+        bpy.ops.object.mode_set(mode = saved_mode)
         self.report({'INFO'}, "%d faces deleted" % n)
         return {'FINISHED'}
 
 
 def delete_overlap(obj):
-    """Deletes overlapping neighbor faces, then removes isolated
-    edges and vertices. Neighbor faces here mean faces that share an edge.
+    """Deletes overlapping neighbor faces and removes dangling edges 
+    and vertices. Neighbor faces mean faces that share an edge.
     Overlapping is determined by face-face-edge angle.
     """
 
@@ -95,21 +98,18 @@ def delete_overlap(obj):
     # Delete overlappings
     bmesh.ops.delete(bm, geom=flist, context=3) # context 3 = DEL_ONLYFACES
 
-    # Save final bmesh back to object and clean up
+    # Save final bmesh back to object
     bmesh_to_object(obj, bm)
     bm.free()
 
     # Remove dangling edges and vertices
-    bpy.ops.object.mode_set(mode = 'EDIT')
-    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
     bpy.ops.mesh.print3d_clean_isolated()
-    bpy.ops.object.mode_set(mode = 'OBJECT')
 
     return n_appends
 
 def add_to_flist(f, flist):
     """Selects and appends face f to face list flist, 
-    if face is not there already
+    if face is not there already.
     """
     if f in flist:
         return None
