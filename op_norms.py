@@ -202,9 +202,9 @@ def recalc_norms_cast(obj, bm, f_is_processed, f_is_noncastable):
         # Get normal and face index number of what is hit by rays in
         # normal and opposite to normal directions.
         dir_normal, i_normal = \
-            probe_hit_face(obj, bm, f_center, f_no, i)
+            obj_probe_hit_face(obj, bm, f_center, f_no, i)
         dir_opposite, i_opposite = \
-            probe_hit_face(obj, bm, f_center, -1 * f_no, i)
+            obj_probe_hit_face(obj, bm, f_center, -1 * f_no, i)
 
         l.debug("Cast results for face %d: " % i \
                 + "%s %s " % (dir_normal, i_normal) \
@@ -410,12 +410,13 @@ def propagate_face_normal_from_neighbor(f, f_neighbor, e=None):
                 + "cos_eta=%.8f" % cos_eta)
     return True
 
-def propagate_face_normal_from_any(f):
+def propagate_face_normal_from_any(f, avoid_faces=None):
     """Tries to propagate face normal to face f from any one of it's 
     neighboring faces which are not overlapping with face f.
+    Do not take normal from faces listed in avoid_faces.
     Returns True if face propagation was succesful and False otherwise.
     """
-    
+
     for e in f.edges:
         l.debug("Processing edge %d" % e.index) 
 
@@ -431,7 +432,12 @@ def propagate_face_normal_from_any(f):
         
         l.debug("Face %d found neighbor face %d" % (f.index, f_neighbor.index))
 
+        # Skip this face if it is listed in avoid_faces
+        if avoid_faces and f_neighbor in avoid_faces:
+            continue
+        
         if propagate_face_normal_from_neighbor(f, f_neighbor, e) == True:
             return True                
+
     return False
     

@@ -141,6 +141,15 @@ def obj_index_list(obj_list):
         r[i] = obj_list[i].index
     return r
 
+def str_indices(list):
+    """Returns string of space separated indices of objects in list"""
+    string = ""
+    for i in list:
+        if isinstance(i, int):
+            string += "%d " % i
+        else:
+            string += "%d " % i.index
+    return string.strip()
 
 def bmesh_edge_center(edge):
     """Calculates coordinates for edge center using edge vertex coordinates."""
@@ -397,23 +406,26 @@ def bmesh_verts_share_edge(bm, v1, v2):
     return False, None
 
 def bmesh_copy_face(src_flist, bm):
-    """Creates a copy of faces in face list src_flist to bmesh bm."""
+    """Creates a copy of face(s) in src_flist to bmesh bm."""
 
     from .op_norms import propagate_face_normal_from_any
     
-    vlist = [] # list of face vertices in destination bmesh
     flist = [] # list of new faces in destination bmesh
     
     # Convert flist to list if needed, to make it iterable
-    if not isinstance(src_flist, list):
+    # First check is for iterability, second check is for lists.
+    if (not hasattr(src_flist, '__iter__')) and (not isinstance(src_flist, list)):
         src_flist = [src_flist]
 
+    n = 0
     for f in src_flist:
+        n += 1
+        vlist = [] # list of face vertices in destination bmesh
         for v in f.verts:
             test, vdst = bmesh_vert_exists_at(bm, v.co)
             if test:
                 if vdst in vlist:
-                    raise ValueError("Vertex %d alredy in list" % v.index)
+                    raise ValueError("Vertex %d already in list" % v.index)
                 vlist.append(vdst)
             else:
                 nv = bm.verts.new(v.co)
@@ -423,12 +435,24 @@ def bmesh_copy_face(src_flist, bm):
         nf.normal_update()
         flist.append(nf)
 
+        # Print out progress
+        if (n % 100 == 0):
+            l.info("Appended %d faces" % n) 
+
     # Finally update lookup tables and propagate normals from neighbors
     bm.faces.index_update()
     bm.faces.ensure_lookup_table()
 
+    n = 0
     for f in flist:
-        propagate_face_normal_from_any(nf)
+        n += 1
+        if not propagate_face_normal_from_any(f, flist):
+            # If no old neighbors exist, try to take normal from any neighbor
+            propagate_face_normal_from_any(f)
+
+        # Print out progress
+        if (n % 100 == 0):
+            l.info("Propagated normals to %d faces" % n) 
 
 def bmesh_vert_exists_at(bm, co):
     """Finds a vertex in bm located very close to coordinates co.
@@ -439,7 +463,7 @@ def bmesh_vert_exists_at(bm, co):
     # tolerance allowed for difference in vertex location
     EPS = 1e-6
     
-    # Decided to use absolute tolerance to test for equality
+    # Decided to use absolute tolerance to test for closeness
     v = [v for v in bm.verts if (v.co - co).length < EPS]
     # relative error tolerance alternative would be something like
     # if 2.0 * (v.co - co).length / (v.co.length + co.length) < EPS]

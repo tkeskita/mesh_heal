@@ -19,7 +19,7 @@
 # <pep8-80 compliant>
 
 # ----------------------------------------------------------------------------
-# Algorithm to fill boundary loops in meshes.
+# Algorithm to find and fill boundary loops in mesh
 # ----------------------------------------------------------------------------
 
 # from mesh_heal.op_fill_holes import *
@@ -28,6 +28,131 @@
 # Initialization
 from .op_gen import *
 from .op_norms import *
+
+from copy import copy
+
+# ----------------------------------------------------------------------------
+
+class EdgePath:
+    """Container class for topology (connectivity information) of edge paths.
+    Stores information about path edges, path end points and branches at 
+    end points.
+    """
+    
+    def __init__(self, x):
+        """Initialize instance with instance x (a BMEdge or another 
+        EdgePath)
+        """
+        
+        # Initialization with an edge
+        if isinstance(x, bmesh.types.BMEdge):
+            self.edges = [] # list of edges in edge path
+            # edge, vertex and branch edges at end of edge path
+            self.end1_e = x
+            self.end1_v = x.verts[0]
+            self.end1_branches = [x]
+            self.end2_e = x
+            self.end2_v = x.verts[1]
+            self.end2_branches = [x]
+            
+        # Initialization with another EdgePath
+        elif isinstance(x, EdgePath):
+            self.edges = copy(x.edges)
+            self.end1_e = x.end1_e
+            self.end1_v = x.end1_v
+            self.end1_branches = copy(x.end1_branches)
+            self.end2_e = x.end2_e
+            self.end2_v = x.end2_v
+            self.end2_branches = copy(x.end2_branches)
+
+        else:
+            raise TypeError("Unknown type")
+
+    def __str__(self):
+        str = "EdgePath %s contains\n" % hex(id(self))
+        str += " %d edges: " % self.len()
+        for i in self.edges:
+            str += "%d " % i.index
+        str += "\n"
+
+        str += " end1 edge %d," % self.end1_e.index \
+            + " end1 vertex %d" % self.end1_v.index \
+            + " branches: "
+        for i in self.end1_branches:
+            str += "%d " % i.index
+        str += "\n"
+            
+        str += " end2 edge %d," % self.end2_e.index \
+            + " end2 vertex %d" % self.end2_v.index \
+            + " branches: "
+        for i in self.end2_branches:
+            str += "%d " % i.index
+        str += "\n"
+        return str
+        
+    def len(self):
+        """Returns number of edges in this edge path"""
+        return len(self.edges)
+
+    def extend(self, e, edges):
+        """Extends EdgePath towards branch edge e, using edges as
+        search domain.
+        """
+
+
+        # Probe at end1
+        new_elist = []
+        new_vlist = []
+        new_branch_edges = []
+        
+        if e in self.end1_branches:
+            n_branches = FHS_get_boundary_edge_path(e, self.end1_v, edges, \
+                self.edges, new_elist, new_vlist, new_branch_edges)
+            l.debug("new_branch_edges %d" % len(new_branch_edges))
+            l.debug("new_branch_edges %s" % hex(id(new_branch_edges)))
+            for ne in new_elist:
+                if ne not in self.edges:
+                    self.edges.append(ne)                    
+            self.end1_branches = copy(new_branch_edges)
+            self.end1_v = new_vlist[-1]
+            if len(new_elist) > 0:
+                self.end1_e = new_elist[-1]
+            else:
+                self.end1_e = []
+
+        # Probe at end2
+        new_elist = []
+        new_vlist = []
+        new_branch_edges = []
+
+        if e in self.end2_branches:
+            n_branches = FHS_get_boundary_edge_path(e, self.end2_v, edges, \
+                self.edges, new_elist, new_vlist, new_branch_edges)
+            l.debug("new_branch_edges %d" % len(new_branch_edges))
+            l.debug("new_branch_edges %s" % hex(id(new_branch_edges)))
+            for ne in new_elist:
+                if ne not in self.edges:
+                    self.edges.append(ne)                    
+            self.end2_branches = copy(new_branch_edges)
+            self.end2_v = new_vlist[-1]
+            if len(new_elist) > 0:
+                self.end2_e = new_elist[-1]
+            else:
+                self.end2_e = []
+
+    
+                
+        l.debug("branch1 %d" % len(self.end1_branches))
+        l.debug("branch2 %d" % len(self.end2_branches))
+                
+        # if (e not in self.end1_branches) and (e not in self.end2_branches):
+        #     raise ValueError("Edge %d is not a continuation branch" % e.index)
+                
+    def is_closed(self):
+        """Returns True if edges in this EdgePath form a closed loop,
+        otherwise returns False
+        """
+        return self.end1_v == self.end2_v
 
 # ----------------------------------------------------------------------------
 
@@ -69,34 +194,50 @@ def fill_holes_sharp(obj):
     bm_orig.verts.ensure_lookup_table()
 
     bm_filled = bmesh.new() # Empty bmesh for saving filled holes
-    
-    processed_edges = [] # List of processed edges
+    searched_edges = [] # List of edges that have been searched
     max_edges = len(bm_orig.edges) # maximum number of edges in original mesh
+
+    # Get all boundary edges to be processed
+    work_edges = [e for e in bm_orig.edges if len(e.link_faces) == 1]
+    
     iter = 0
     while True:
         iter += 1
-        l.info("=====")
-        l.info("Loop fill iteration %d" % iter)
-        edges = FHS_get_continuous_boundary_edges(bm_orig, processed_edges)
-        if edges == []:
-            l.info("No unprocessed boundary edges found! Stopping.")
+        l.debug("=====")
+        l.info("Loop fill iteration %d, " % iter \
+               + "%d work edges remaining" % len(work_edges))
+
+        # Stop if there are no more edges to be processed
+        if not work_edges:
             break
+        
+        # Find boundary edge loop. If edges do not form a closed loop,
+        # remove unbranching edges from work edges and go to next edges
+        edge_loop = []
+        if not FHS_get_continuous_boundary_edges(work_edges, edge_loop):
+            work_edges = [e for e in work_edges if e not in edge_loop]
+            continue
+
+        # Remove edge loop edges from list of searchable edges
+        work_edges = [e for e in work_edges if e not in edge_loop]
 
         # Stop if edges contains a newly created edge
-        n_new_edges = [e for e in edges if e.index > max_edges]
-        if len(n_new_edges) > 0:
-            l.info("No more original boundary edges found! Stopping.")
-            break
+        # Not needed any more?
+        #n_new_edges = [e for e in edges if e.index > max_edges]
+        #if len(n_new_edges) > 0:
+        #    l.info("No more original boundary edges found! Stopping.")
+        #    break
 
-        # Skip if they do not for a closed loop
-        if not FHS_edges_form_closed_loop(bm_orig, edges):
-            l.debug("Edges do not form a closed loop, skip.")
-            continue
-        
-        l.debug("Found %d connected boundary edges" % len(edges))
+        l.debug("Found %d connected boundary edges" % len(edge_loop))
 
-        # Create subset of mesh and boundary edges of subset mesh
-        bm_sub, edges_sub = FHS_create_subset_mesh(edges)
+        # Create bmesh subset of mesh around boundary edges
+        bm_sub, edges_sub = FHS_create_subset_mesh(edge_loop)
+
+        # DEBUG: Save subset mesh
+        #for e in edges_sub:
+        #    e.select = True
+        #bmesh_to_object(obj, bm_sub)
+        #return 0
 
         # Create BVHTree of subset mesh for ray casting
         tree = mathutils.bvhtree.BVHTree.FromBMesh(bm_sub)
@@ -106,20 +247,21 @@ def fill_holes_sharp(obj):
             FHS_generate_vertex_data(tree, edges_sub)
         rval = FHS_fill_holes_to_boundary_edge_path(bm_sub, bm_filled, bdata_v, \
             bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn)
+
+        # Report failed edges
         for e in edges_sub:
             if len(e.link_faces) == 1:
-                l.debug("Failed edge %d" % e.index)
-        l.info("Failed %d out of %d edges" % (rval, len(edges)))
+                l.debug("Failed subset edge %d" % e.index)
+        l.debug("Failed %d out of %d edges" % (rval, len(edges_sub)))
 
         del [bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed]
-        del [bdata_conn, edges]
+        del [bdata_conn, edge_loop]
         bm_sub.free()
         del tree
 
-
     # Copy all new faces to original bmesh
-    for f in bm_filled.faces:
-        bmesh_copy_face(f, bm_orig)
+    l.info("Merging %d new faces to original mesh.." % len(bm_filled.faces))
+    bmesh_copy_face(bm_filled.faces, bm_orig)
 
     # Select and count remaining boundary edges
     n_unprocessed = 0
@@ -187,38 +329,118 @@ def FHS_create_subset_mesh(edges):
     return bm_sub, edges_sub
 
 
-def FHS_get_continuous_boundary_edges(bm, processed_edges):
-    """Finds first continuous set of boundary edges in bmesh bm
-    and returns a list of edge objects that are part of that
-    set of boundary edges. Note: Edge list is not ordered.
+def FHS_get_continuous_boundary_edges(work_edges, edge_loop):
+    """Finds shortest possible closed boundary edge loop consisting of
+    boundary edges, and contains first edge in work_edges. Loop edges are
+    appended to list edge_loop. 
+    At minimum the first edge is added to edge_loop.
+    Return True if closed edge loop was found, and False otherwise.
     """
+
+    if not work_edges:
+        raise ValueError("sanity check")
     
-    # start the list of boundary edges
-    boundary_edges = []
+    # If there are no branches, give results
+    e0 = work_edges[0]
+    ep0 = EdgePath(e0)
+    ep0.extend(e0, work_edges)
+    l.debug(ep0)
+    if ep0.is_closed():
+        edge_loop += ep0.edges
+        del ep0
+        return True
 
-    for e in bm.edges:
-        # only boundary edges connected to one and only one face are considered
-        if len(e.link_faces) != 1:
-            continue
-        
-        # do not process same edges twice
-        if e in processed_edges:
-            continue
+    # Otherwise, find combinations of all branches
+    eplist = []
+    for e in ep0.end1_branches + ep0.end2_branches:
+        enew = EdgePath(ep0) # Start with ep0
+        enew.extend(e, work_edges) # Extend towards branch
+        eplist.append(enew)
 
-        # add boundary edge to lists        
-        l.debug("Adding boundary edge %d" % e.index)
-        processed_edges.append(e)
-        boundary_edges.append(e)
+    #l.debug("eplist:")
+    #for ep in eplist:
+    #    l.debug(ep)
         
-        # recursively process edge vertices to populate edge list
-        for v in e.verts:
-            FHS_get_next_boundary_edge(v, e, boundary_edges, processed_edges)
-            
-        break
+    # Find first among shortest edge path among closed edge paths:
+    loop_found = False
+    ep = [ep for ep in eplist if ep.is_closed()]
+    if ep:
+        loop_found = True
+        shortest = min(ep, key=lambda x: x.len())
+        edge_loop += shortest.edges
+
+        debugtext = "Chosen loop is "
+        for e in edge_loop:
+            debugtext += "%d " % e.index
+        l.debug(debugtext)
+
+    # if no closed loops were found, return the first unbranched part
+    else:
+        edge_loop += ep0.edges
+        l.debug("No closed loops found for edge %d" % e0.index)
+        
+    # Cleanup
+    for i in ep:
+        del i
+    del ep0
+
+    return loop_found
     
-    return boundary_edges
+def FHS_get_boundary_edge_path(e0, v0, edges, old_elist, new_elist, new_vlist, new_branch_edges):
+    """Finds edges and vertices that are located along an unbranching edge
+    path which starts from vertex v0 towards edge e0.
+    Boundary edges are saved to list new_elist and vertices to list new_vlist. 
+    Searching is stopped if found edges exist in list old_elist.
+    Possible branch edges at the end point are appended to new_branch_edges.
+    Only edges in argument list "edges" are eligible for searching.
+    Returns number of branches at the end point.
+    """
 
-def FHS_edges_form_closed_loop(bm, edges):
+    new_elist.append(e0)
+    nv = e0.other_vert(v0) # next vertex
+    new_vlist.append(nv)
+    
+    eold = e0 # old edge
+    continue_iteration = True
+    
+    while continue_iteration:
+        # Populate list of boundary edges branching from nv
+        test_branches = []
+        for e in nv.link_edges:
+            if e == eold:
+                l.debug("ignore old link_edge %d" %e.index)
+                continue
+            if (e in old_elist) or (e == e0):
+                continue_iteration = False
+                l.debug("found old link_edge %d" %e.index)
+            if e in edges:
+                l.debug("append new approved link_edge %d" %e.index)
+                test_branches.append(e)
+            else:
+                l.debug("not allowed link_edge %d" %e.index)
+                
+                
+        n_branches = len(test_branches)
+        l.debug("n_branches %d" % n_branches)
+        
+        # If there is only one continuation edge, add it and continue iteration
+        if continue_iteration and n_branches == 1:
+            ne = test_branches[0] # update next edge
+            new_elist.append(ne)
+            eold = ne
+            nv = ne.other_vert(nv) # update next vertex
+            new_vlist.append(nv)
+
+        # If branch point or end point was found, stop here
+        if n_branches != 1:
+            new_branch_edges += test_branches
+            l.debug("length of new_branch_edges is %d" % len(new_branch_edges))
+            break
+
+    return n_branches
+
+
+def NOTUSED_FHS_edges_form_closed_loop(bm, edges):
     """Returns True if edges form a closed edge loop in bmesh bm,
     otherwise returns False.
     """
@@ -241,51 +463,6 @@ def FHS_edges_form_closed_loop(bm, edges):
     l.debug("Edge loop is closed")
     return True
                 
-def FHS_get_next_boundary_edge(v0, e0, boundary_edges, processed_edges):
-    """Finds next boundary edge from edge e0 which is connected
-    to edge's vertex v0, adds it to boundary_edges list and calls 
-    itself for the next edge, to recursively find next edges
-    in the boundary path.
-    """
-
-    l.debug("Probe next boundary for v %d" % v0.index + " e %d" % e0.index)
-    
-    candidate = None # candidate as next boundary edge
-    
-    for e in v0.link_edges:
-        if e == e0:
-            continue
-        if len(e.link_faces) != 1:
-            continue
-        # Stop if this is the second new boundary edge at this
-        # vertex. Boundary branching is not supported.
-        if candidate != None:
-            return None
-        candidate = e
-
-    # Exit if nothing was found
-    if candidate == None:
-        return None
-
-    # Exit if this edge has been already added
-    if candidate in boundary_edges:
-        return None
-    
-    # At this point a new candidate edge has been found, so        
-    # add it to list
-    l.debug("Added new boundary edge %d" % candidate.index)
-    boundary_edges.append(candidate)
-    processed_edges.append(candidate)
-
-    # then find the continuation vertex and recurse
-    for v in candidate.verts:
-        if v == v0:
-            continue
-        FHS_get_next_boundary_edge(v, candidate, boundary_edges, \
-            processed_edges)
-        
-    return None
-
 def FHS_generate_vertex_data(source, edges):
     """Generates allowed connectivity data and boundary vertex data
     for vertices of boundary edge path edges for object obj.
@@ -313,7 +490,7 @@ def FHS_generate_vertex_data(source, edges):
         for v in e.verts:
             FHS_populate_vert_data(v, e, bdata_v, bdata_e1, bdata_e2, bdata_a)
     bdata_processed = len(bdata_v) * [False]
-
+    
     # Set up bdata_conn
     nv = len(bdata_v)
     bdata_conn = numpy.full((nv, nv), True, dtype=bool)
@@ -339,7 +516,7 @@ def FHS_generate_vertex_data(source, edges):
     return bdata_v, bdata_e1, bdata_e2, bdata_a, bdata_processed, bdata_conn
 
 def FHS_populate_vert_data(v, e, bdata_v, bdata_e1, bdata_e2, bdata_a):
-    """Populates vertex data for boundary vertice v which belongs to edge e.
+    """Populates vertex data for boundary vertex v which belongs to edge e.
     See FHS_generate_vertex_data for description of other arguments.
     """
 
@@ -388,6 +565,11 @@ def FHS_fill_holes_to_boundary_edge_path(bm, bm_filled, bdata_v, \
             v = bdata_v[i]
             e1 = bdata_e1[i]
             e2 = bdata_e2[i]
+            if e1 == None:
+                raise ValueError("e1 is None")
+            if e2 == None:
+                raise ValueError("e2 is None")
+                
             l.debug("Processing vertex %d, " % v.index \
                     + "edges %d and %d" % (e1.index, e2.index))
             
@@ -398,10 +580,14 @@ def FHS_fill_holes_to_boundary_edge_path(bm, bm_filled, bdata_v, \
             ov2 = None
             if e2 != None:
                 ov2 = e2.other_vert(v)
-            # Get next vertice after other vertices
+            # Get next vertex after other vertices
             oov1 = FHS_other_vert(ov1, e1, bdata_v, bdata_e1, bdata_e2)
             oov2 = FHS_other_vert(ov2, e2, bdata_v, bdata_e1, bdata_e2)
-            l.debug("other vertices: %d and %d," % (ov1.index, ov2.index) \
+            if oov1 == None:
+                raise ValueError("oov1 is None")
+            if oov2 == None:
+                raise ValueError("oov2 is None")
+            l.debug("other vertices: %d and %d, " % (ov1.index, ov2.index) \
                 + "oo %d and %d" % (oov1.index, oov2.index))
 
             # Connection between ov1 and ov2 must be allowed
@@ -452,17 +638,24 @@ def FHS_other_vert(v, e, bdata_v, bdata_e1, bdata_e2):
     """
 
     if v == None or e == None:
-        return None
+        raise ValueError("v or e is None")
     i = bdata_v.index(v)
+    l.debug("index %d" % i)
     if bdata_e1[i] == e:
         oe = bdata_e2[i]
+        l.debug("oe is %d" % oe.index)
     elif bdata_e2[i] == e:
         oe = bdata_e1[i]
+        l.debug("oe is %d" % oe.index)
     else:
-        return None
+        raise ValueError("Can't find other edge")
     if oe == None:
-        return None
-    return oe.other_vert(v)
+        raise ValueError("oe is None")
+    l.debug("other vertices of oe: %d and %d" % (oe.verts[0].index, oe.verts[1].index))
+    l.debug("vertex index is %d" % v.index)
+    ov = oe.other_vert(v)
+    l.debug("found other vertex %d" % ov.index)
+    return ov
         
 def FHS_connection_is_allowed(bdata_v, bdata_conn, v1, v2):
     """Checks if connection of vertices v1 and v2 is allowed according
@@ -490,7 +683,7 @@ def FHS_connection_is_allowed(bdata_v, bdata_conn, v1, v2):
     return bdata_conn[iv1, iv2]
 
 def FHS_connection_creates_sharp_edge(e, v):
-    """Checks if boundary edge e would create a sharp edge if a
+    """Checks if edge e would create a sharp edge if a
     triangle face were created connecting edge e vertices and vertex v.
     Returns True if edge would become sharp and False otherwise.
     """
@@ -500,17 +693,14 @@ def FHS_connection_creates_sharp_edge(e, v):
     MIN_COS_ANGLE = 1e-2
 
     if e == None or v == None:
-        return None
+        raise ValueError("e or v is None")
 
-    # only boundary edges connected to one and only one face are considered
-    if len(e.link_faces) != 1:
-        raise ValueError("Edge %d contains " % e.index \
-            + "%d faces" % len(e.link_faces))
-    f = e.link_faces[0]
-    cos_angle = edge_face_vertex_cos_angle (e, f, v)
-    if cos_angle:
-        return (cos_angle > (1 - MIN_COS_ANGLE))
-    return None
+    for f in e.link_faces:
+        cos_angle = edge_face_vertex_cos_angle (e, f, v)
+        if (cos_angle > (1 - MIN_COS_ANGLE)):
+            return True
+
+    return False
             
 def FHS_connect(bm, bm_filled, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     """Creates face to boundary edges connected to vertex with index i
@@ -557,14 +747,19 @@ def FHS_connect(bm, bm_filled, i, bdata_v, bdata_e1, bdata_e2, bdata_a):
     # propagate_face_normal_from_any(neogeo)
 
     # Copy face to fill bmesh
+    l.debug(bm_filled)
     bmesh_copy_face(neogeo, bm_filled)
     
     l.debug("Created face %d " % bm.faces[-1].index \
             + "connecting vertices %d " % v.index \
             + "+ %d and %d" % (v1.index, v2.index))
 
-    # If a new edge was created, it is the last one
-    e = bm.edges[-1]
+    # Find the edge between v1 and v2. It can be a new edge or a
+    # previously existing edge if mesh is non-manifold.
+    e = [e for e in bm.edges if v1 in e.verts and v2 in e.verts]
+    if not e:
+        raise ValueError("sanity check")
+    e = e[0]
     l.debug("Last edge index is %d" % e.index)
 
     # Update new neigbor edge info
