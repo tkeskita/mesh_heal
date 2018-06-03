@@ -21,6 +21,7 @@ First try to use Blender's default routines to heal your mesh. Especially, pleas
 Installation
 ------------
 
+* Source code is available in https://github.com/tkeskita/mesh_heal
 * Use "Clone or download" in github, and "Download ZIP"
 * Start Blender, go to "User Preferences" --> Install from File --> open the downloaded zip file
 * Activate the "Mesh Heal add-on". It is located in "Community" level.
