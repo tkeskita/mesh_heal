@@ -6,7 +6,7 @@ Mesh Heal is an add-on for [Blender](https://www.blender.org/). It includes addi
 
 ## Documentation
 
-Documenatation is located in the [doc folder in the add-on sources](doc/html/index.html).
+Documenatation is located in the doc folder in the add-on sources. You can also [view documentation in github html preview](http://htmlpreview.github.io/?https://github.com/tkeskita/mesh_heal/blob/master/doc/html/index.html).
 
 ## Feedback
 
