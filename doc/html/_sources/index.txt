@@ -1,0 +1,43 @@
+Mesh Heal add-on documentation
+==============================
+
+Introduction
+------------
+
+Mesh Heal is an add-on for `Blender <https://www.blender.org/>`_. It includes additional Blender operators for healing surface meshes. Operators include Recalculate Normals, Fill Holes and Clean Mesh. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender's default routines don't always produce good results in some cases. Specifically, I run into problems when I was trying to turn non-manifold `isosurfaces <https://en.wikipedia.org/wiki/Isosurface>`_ into manifold surfaces with consistent face normals. For cases like that, you can try this add-on.
+
+Warnings
+--------
+
+* Mesh Heal operators are work in progress, use at your own risk.
+* Mesh Heal operators are slow.
+* Supported only on Blender version 2.79 (not yet version 2.80).
+
+Recommendations
+---------------
+
+First try to use Blender's default routines to heal your mesh. Especially, please check the official `3D Print Toolbox <https://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Modeling/PrintToolbox>`_ add-on, which contains many mesh healing and analysis operators. If Blender's default operators fail, try this add-on.
+
+Installation
+------------
+
+* Use "Clone or download" in github, and "Download ZIP"
+* Start Blender, go to "User Preferences" --> Install from File --> open the downloaded zip file
+* Activate the "Mesh Heal add-on". It is located in "Community" level.
+	  
+  .. note::
+	 Enabling Mesh Heal add-on will also enable `3D Print Toolbox <https://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Modeling/PrintToolbox>`_ add-on (which is a requirement for Mesh Heal add-on).
+
+Usage
+-----
+
+Mesh Heal add-on tools are located in "Print 3D" tab in the operator panel.
+
+TODO: Add documentation and examples of operators.
+
+
+Feedback
+--------
+
+`Report issues <https://github.com/tkeskita/mesh_heal/issues>`_
+

@@ -1,21 +1,13 @@
-# Mesh Heal add-on for Blender 2.79+
+# Mesh Heal add-on for Blender
 
 ## Introduction
 
-This [Blender](https://www.blender.org/) add-on includes additional routines for healing meshes, such as Recalculate Normals, Fill Holes and Clean Mesh (to convert non-manifold mesh into manifold while minimizing destructive operations). By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender's default routines don't always work right when mesh quality is bad enough, mesh errors are specific, or mesh contains many errors.
+Mesh Heal is an add-on for [Blender](https://www.blender.org/). It includes additional Blender operators for healing surface meshes. Operators include Recalculate Normals, Fill Holes and Clean Mesh. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender's default routines don't always produce good results in some cases. Specifically, I run into problems when I was trying to turn non-manifold [isosurfaces](https://en.wikipedia.org/wiki/Isosurface) into manifold surfaces with consistent face normals. For cases like that, you can try this add-on.
 
-## Recommendations
+## Documentation
 
-- First try to use Blender's default routines to heal your mesh. Especially, please check the official "3D Print Toolbox" add-on, which contains many mesh healing and analysis functions.
-- If Blender's default routines fail, try the routines in this add-on.
-
-## Warnings
-
-- Routines are very unstable and WIP, use at your own risk.
-- Routines are slow.
+Documenatation is located in the [doc folder in the add-on sources](doc/html/index.html).
 
 ## Feedback
 
 [Report issues](https://github.com/tkeskita/mesh_heal/issues)  
-
-TODO: Add link to blenderartists.org thread here
