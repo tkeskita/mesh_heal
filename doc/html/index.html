@@ -86,8 +86,16 @@
 <li><a class="reference internal" href="#warnings">Warnings</a></li>
 <li><a class="reference internal" href="#recommendations">Recommendations</a></li>
 <li><a class="reference internal" href="#installation">Installation</a></li>
-<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#remove-non-manifold">Remove Non-Manifold</a></li>
+<li><a class="reference internal" href="#delete-overlapping-neighbor-faces">Delete Overlapping Neighbor Faces</a></li>
+<li><a class="reference internal" href="#sew-mesh">Sew Mesh</a></li>
+<li><a class="reference internal" href="#clean-mesh">Clean Mesh</a></li>
+<li><a class="reference internal" href="#fill-holes-sharp">Fill Holes (Sharp)</a></li>
+<li><a class="reference internal" href="#mh-recalc-norms">MH Recalc Norms</a></li>
 <li><a class="reference internal" href="#feedback">Feedback</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -172,11 +180,82 @@
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>Mesh Heal add-on tools are located in &#8220;Print 3D&#8221; tab in the operator panel.</p>
-<p>TODO: Add documentation and examples of operators.</p>
+<img alt="_images/mesh_heal_tab.png" src="_images/mesh_heal_tab.png" />
+<p>Operators are available in object mode, and they are listed in operator search menu prepended with &#8220;MH&#8221;.</p>
+<div class="section" id="remove-non-manifold">
+<h3>Remove Non-Manifold<a class="headerlink" href="#remove-non-manifold" title="Permalink to this headline">¶</a></h3>
+<p>This operator combines several cleaning actions:</p>
+<ul class="simple">
+<li>Merges closeby vertices using the distance value set in the operator panel</li>
+<li>Runs the Delete Overlapping Neighbor Faces operator</li>
+<li>Removes non-manifold vertices (not boundary vertices), edges and faces</li>
+<li>Deletes edges and vertices that are not part of faces</li>
+</ul>
+</div>
+<div class="section" id="delete-overlapping-neighbor-faces">
+<h3>Delete Overlapping Neighbor Faces<a class="headerlink" href="#delete-overlapping-neighbor-faces" title="Permalink to this headline">¶</a></h3>
+<p>Deletes overlapping neighbor faces and removes dangling edges
+and vertices. Neighbor faces mean faces that share an edge.
+Overlapping is determined by face-face-edge angle.</p>
+<img alt="_images/mesh_heal_delete_overlapping.png" src="_images/mesh_heal_delete_overlapping.png" />
+</div>
+<div class="section" id="sew-mesh">
+<h3>Sew Mesh<a class="headerlink" href="#sew-mesh" title="Permalink to this headline">¶</a></h3>
+<p>Reduces number of boundary edges in mesh by merging pairs of closeby
+boundary vertices (sew open seams). Boundary vertices are merged
+if ratio of vertex pair distance to smallest boundary edge length
+(of edges connected to either vertex) is smaller than threshold.</p>
+</div>
+<div class="section" id="clean-mesh">
+<h3>Clean Mesh<a class="headerlink" href="#clean-mesh" title="Permalink to this headline">¶</a></h3>
+<p>Main mesh cleaning routine. This routine attempts
+(but does not guarantee) to make closed volumes by
+merging vertices, then repeatedly removing bad faces and
+refilling boundary holes left in the mesh.
+Bad faces are made of vertices, which are either boundary vertices,
+or vertices of intersecting or overlapping faces.</p>
+</div>
+<div class="section" id="fill-holes-sharp">
+<h3>Fill Holes (Sharp)<a class="headerlink" href="#fill-holes-sharp" title="Permalink to this headline">¶</a></h3>
+<p>Fills boundary edges in object obj with triangles by a
+&#8216;sharpest angle first&#8217; approach. This method processes each
+continuous boundary edge loop and fills it with
+triangles by connecting edge vertices. Connections are done in
+sharpness order, so that two edges connected to the vertex with
+sharpest edge angle are connected by a face. Connections are not
+made for vertex pairs which are mutually occluded (a neighboring face
+of the edge loop exists between vertices). Triangle filling is repeated
+until all boundary edges that can be processed, have been processed.</p>
+</div>
+<div class="section" id="mh-recalc-norms">
+<h3>MH Recalc Norms<a class="headerlink" href="#mh-recalc-norms" title="Permalink to this headline">¶</a></h3>
+<p>Recalculates normals of object using a recursive outward face normal
+casting and propagation method (see below).</p>
+<p>This operator works best on closed surfaces, but can be run on
+non-manifold meshes as well. Algorithm also supports layers of
+surfaces inside surfaces, in which case each surface layer normals are
+set to opposite direction of outer layer normals. Faces whose normals
+could not be calculated are added to selection when operator is
+finished.</p>
+<p>Description of the algorithm:</p>
+<p>Normal calculation algorithm contains alternating casting and
+propagation phases. In casting phase, rays are cast from each
+unprocessed face to both current normal and opposite directions. If
+possible, normal information is set depending on what the rays hit
+(e.g. world boundary, or a face with confirmed normal direction) and
+the face is marked as processed. The method relies on getting correct
+results from casting phase. Therefore a few heuristics (search for
+overlapping and high aspect ration faces) are included to choose which
+faces are not included in casting.</p>
+<p>In propagation phase, the normal direction is propagated from
+processed faces to neighboring faces iteratively until all faces have
+been processed. The casting and propagation phases are repeated until
+all faces are processed.</p>
 </div>
 <div class="section" id="feedback">
-<h2>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline">¶</a></h2>
+<h3>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline">¶</a></h3>
 <p><a class="reference external" href="https://github.com/tkeskita/mesh_heal/issues">Report issues</a></p>
+</div>
 </div>
 </div>
 
