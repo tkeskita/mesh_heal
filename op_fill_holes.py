@@ -167,7 +167,9 @@ class MeshHealFillHolesSharpOperator(bpy.types.Operator):
         return (ob and ob.type == 'MESH' and context.mode in {'OBJECT','EDIT_MESH'})
 
     def execute(self, context):
+        saved_mode = context.active_object.mode
         n = fill_holes_sharp(context.active_object)
+        bpy.ops.object.mode_set(mode = saved_mode)
         self.report({'INFO'}, "%d problem edges selected" % n)
         return {'FINISHED'}
 

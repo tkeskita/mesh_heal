@@ -23,17 +23,17 @@
 # ----------------------------------------------------------------------------
 
 # from mesh_heal.op_clean_mesh import *
-# clean_mesh(C.active_object)
+# clean_and_patch(C.active_object)
 
 # Initialization
 from .op_gen import *
 
 # ----------------------------------------------------------------------------
 
-class MeshHealCleanMeshOperator(bpy.types.Operator):
-    """Clean Mesh (Mesh Heal)"""
-    bl_idname = "mesh.mesh_heal_clean_mesh"
-    bl_label = "MH Clean Mesh"
+class MeshHealCleanAndPatchOperator(bpy.types.Operator):
+    """Clean and Patch (Mesh Heal)"""
+    bl_idname = "mesh.mesh_heal_clean_and_patch"
+    bl_label = "MH Clean and Patch"
 
     @classmethod
     def poll(cls, context):
@@ -42,15 +42,15 @@ class MeshHealCleanMeshOperator(bpy.types.Operator):
 
     def execute(self, context):
         saved_mode = context.active_object.mode
-        n = clean_mesh(context.active_object)
+        n = clean_and_patch(context.active_object)
         bpy.ops.object.mode_set(mode = saved_mode)
         self.report({'INFO'}, "%d problem verts selected" % n)
         return {'FINISHED'}
 
-class MeshHealRemoveNonManifoldOperator(bpy.types.Operator):
-    """Remove Non-manifold (Mesh Heal)"""
-    bl_idname = "mesh.mesh_heal_remove_non_manifold"
-    bl_label = "MH Remove Non-manifold"
+class MeshHealSimpleCleanOperator(bpy.types.Operator):
+    """Simple Clean (Mesh Heal)"""
+    bl_idname = "mesh.mesh_heal_simple_clean"
+    bl_label = "MH Simple Clean"
 
     @classmethod
     def poll(cls, context):
@@ -62,14 +62,14 @@ class MeshHealRemoveNonManifoldOperator(bpy.types.Operator):
         saved_mode = context.active_object.mode
         mdist = bpy.context.scene.mesh_heal.vert_merge_distance
         nv0 = len(context.active_object.data.vertices)
-        clean_mesh_remove_non_manifold(context.active_object, mdist)
+        clean_mesh_simple_clean(context.active_object, mdist)
         nv = len(context.active_object.data.vertices)
         bpy.ops.object.mode_set(mode = saved_mode)
         self.report({'INFO'}, "%d verts deleted" % (nv0 - nv))
         return {'FINISHED'}
     
 
-def clean_mesh(obj):
+def clean_and_patch(obj):
     """Main mesh cleaning routine. This routine attempts 
     (but does not guarantee) to make closed volumes by
     merging vertices, then repeatedly removing bad faces and 
@@ -116,9 +116,7 @@ def clean_mesh(obj):
         # bpy.ops.mesh.fill_holes(sides=0) # not working always
         bpy.ops.mesh.mesh_heal_fill_holes_sharp() # own method, slow
         
-        bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', \
-                                           ngon_method='BEAUTY')
-        # TODO: Dig down why face filling routines fail
+        # TODO: Dig down to why Blender's face filling routines fail
         
         # Vertex deletion (or edge collapse) are destructive and 
         # (combined with intersecting faces check) can potentially
@@ -189,7 +187,7 @@ def clean_mesh_select_non_manifold_verts():
     use_multi_face=True, use_non_contiguous=False, use_verts=False) 
 
     
-def clean_mesh_remove_non_manifold(obj, mdist):
+def clean_mesh_simple_clean(obj, mdist):
     """Merges closeby vertices, then removes non-manifold vertices, 
     edges and faces from object obj. mdist is vertex merge distance.
     """

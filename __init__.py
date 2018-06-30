@@ -25,7 +25,7 @@ bl_info = {
     "location": "3D View > Toolbox",
     "description": "Utilities for healing arbitrary surface meshes",
     "warning": "WIP",
-    # "wiki_url": "https://none",
+    "wiki_url": "https://github.com/tkeskita/mesh_heal",
     "support": 'COMMUNITY',
     "category": "Mesh"
 }
@@ -96,7 +96,7 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
 
         col = layout.column()
         rowsub = col.row(align=True)
-        rowsub.operator("mesh.mesh_heal_remove_non_manifold", text="Remove Non-Manifold")
+        rowsub.operator("mesh.mesh_heal_simple_clean", text="Simple Clean")
         rowsub.prop(mesh_heal, "vert_merge_distance", text="distance")
 
         row = layout.row()
@@ -109,7 +109,7 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
 
         row = layout.row()
-        row.operator("mesh.mesh_heal_clean_mesh", text="Clean Mesh")
+        row.operator("mesh.mesh_heal_clean_and_patch", text="Clean and Patch")
         row = layout.row()
         row.operator("mesh.mesh_heal_fill_holes_sharp", text="Fill Holes (Sharp)")
         row = layout.row()
@@ -156,8 +156,8 @@ classes = (
     MeshHealToolBarInObjectMode,
     MeshHealToolBarInEditMode,
     op_norms.MeshHealRecalcNormsOperator,
-    op_clean_mesh.MeshHealCleanMeshOperator,
-    op_clean_mesh.MeshHealRemoveNonManifoldOperator,
+    op_clean_mesh.MeshHealCleanAndPatchOperator,
+    op_clean_mesh.MeshHealSimpleCleanOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
     op_delete_overlap.MeshHealDeleteOverlapOperator,
