@@ -26,6 +26,7 @@ bl_info = {
     "description": "Utilities for healing arbitrary surface meshes",
     "warning": "WIP",
     "wiki_url": "https://github.com/tkeskita/mesh_heal",
+    "tracker_url": "https://github.com/tkeskita/mesh_heal/issues",
     "support": 'COMMUNITY',
     "category": "Mesh"
 }

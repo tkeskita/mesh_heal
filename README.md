@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Mesh Heal is an add-on for [Blender](https://www.blender.org/). It includes additional Blender operators for healing surface meshes. Operators include Recalculate Normals, Fill Holes and Clean Mesh. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender's default routines don't always produce good results in some cases. Specifically, I run into problems when I was trying to turn non-manifold [isosurfaces](https://en.wikipedia.org/wiki/Isosurface) into manifold surfaces with consistent face normals. For cases like that, you can try this add-on.
+Mesh Heal is an add-on for [Blender](https://www.blender.org/). It includes additional Blender operators for healing surface meshes. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender’s default routines don’t always produce good results in some difficult cases. Specifically, I run into problems when I was trying to convert non-manifold isosurfaces into manifold surfaces with consistent face normals appropriate for volumetric rendering.
 
 ## Documentation
 

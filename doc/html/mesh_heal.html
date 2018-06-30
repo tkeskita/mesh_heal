@@ -1,0 +1,337 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Mesh Heal add-on documentation &mdash; Mesh Heal add-on 1.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="Mesh Heal add-on 1.0 documentation" href="index.html"/>
+        <link rel="prev" title="&lt;no title&gt;" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Mesh Heal add-on
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">Mesh Heal add-on documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#warnings">Warnings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recommendations">Recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage">Usage</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#simple-clean">Simple Clean</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#delete-overlapping-neighbor-faces">Delete Overlapping Neighbor Faces</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sew-mesh">Sew Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#clean-and-patch">Clean and Patch</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fill-holes-sharp">Fill Holes (Sharp)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#mh-recalc-norms">MH Recalc Norms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#feedback">Feedback</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Mesh Heal add-on</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Mesh Heal add-on documentation</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/mesh_heal.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mesh-heal-add-on-documentation">
+<h1>Mesh Heal add-on documentation<a class="headerlink" href="#mesh-heal-add-on-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="introduction">
+<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<p>Mesh Heal is an add-on for <a class="reference external" href="https://www.blender.org/">Blender</a>. It includes additional Blender operators for healing surface meshes. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender&#8217;s default routines don&#8217;t always produce good results in some difficult cases. Specifically, I run into problems when I was trying to convert non-manifold <a class="reference external" href="https://en.wikipedia.org/wiki/Isosurface">isosurfaces</a> into <a class="reference external" href="https://en.wikipedia.org/wiki/Manifold">manifold</a> surfaces with consistent face normals appropriate for volumetric rendering.</p>
+</div>
+<div class="section" id="warnings">
+<h2>Warnings<a class="headerlink" href="#warnings" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Mesh Heal operators are work in progress, use at your own risk.</li>
+<li>Mesh Heal operators are slow.</li>
+<li>Supported only on Blender version 2.79 (not yet version 2.8x).</li>
+</ul>
+</div>
+<div class="section" id="recommendations">
+<h2>Recommendations<a class="headerlink" href="#recommendations" title="Permalink to this headline">¶</a></h2>
+<p>First try to use Blender&#8217;s default routines to heal your mesh. Especially, please check the official 3D Print Toolbox add-on, which contains many mesh healing and analysis operators. If Blender&#8217;s default operators fail, try this add-on.</p>
+</div>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Source code is available in <a class="reference external" href="https://github.com/tkeskita/mesh_heal">https://github.com/tkeskita/mesh_heal</a></p>
+</li>
+<li><p class="first">Use &#8220;Clone or download&#8221; in github, and &#8220;Download ZIP&#8221;</p>
+</li>
+<li><p class="first">Start Blender, go to &#8220;User Preferences&#8221; &#8211;&gt; Install from File &#8211;&gt; open the downloaded zip file</p>
+</li>
+<li><p class="first">Activate the &#8220;Mesh Heal add-on&#8221; in User preferences. It is located in &#8220;Community&#8221; level of Blender add-ons.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Enabling Mesh Heal add-on will also enable 3D Print Toolbox add-on (which is a requirement for Mesh Heal add-on).</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Mesh Heal (MH) add-on tools are currently available in object mode. Tools are located in &#8220;Print 3D&#8221; tab in the operator panel, below or above 3D Print Toolbox.</p>
+<img alt="_images/mesh_heal_tab.png" src="_images/mesh_heal_tab.png" />
+<p>All operators are available in object mode (and some in edit mode as well). Operators are listed in operator search menu prepended with &#8220;MH&#8221;.</p>
+<div class="section" id="simple-clean">
+<h3>Simple Clean<a class="headerlink" href="#simple-clean" title="Permalink to this headline">¶</a></h3>
+<p>This is a convenience operator, which combines several cleaning actions:</p>
+<ul class="simple">
+<li>Merges closeby vertices using the distance value set in the operator panel</li>
+<li>Runs the Delete Overlapping Neighbor Faces operator</li>
+<li>Removes non-manifold vertices (not boundary vertices), edges and faces</li>
+<li>Deletes edges and vertices that are not part of faces</li>
+</ul>
+</div>
+<div class="section" id="delete-overlapping-neighbor-faces">
+<h3>Delete Overlapping Neighbor Faces<a class="headerlink" href="#delete-overlapping-neighbor-faces" title="Permalink to this headline">¶</a></h3>
+<p>Deletes overlapping neighbor faces and removes dangling edges and
+vertices. Neighbor faces mean faces that share an edge.  Overlapping
+is determined by face-face angle measured at the shared edge.
+Primarily the face with fewer vertices is deleted. If number of
+vertices are identical, then smaller face is deleted.</p>
+<img alt="_images/mesh_heal_delete_overlapping.png" src="_images/mesh_heal_delete_overlapping.png" />
+</div>
+<div class="section" id="sew-mesh">
+<h3>Sew Mesh<a class="headerlink" href="#sew-mesh" title="Permalink to this headline">¶</a></h3>
+<p>Reduces number of boundary edges in mesh by merging pairs of closeby
+boundary vertices (sew open seams). Boundary vertices are merged
+if ratio of vertex pair distance to smallest boundary edge length
+(of edges connected to either vertex) is smaller than threshold.</p>
+<img alt="_images/mesh_heal_sew.png" src="_images/mesh_heal_sew.png" />
+</div>
+<div class="section" id="clean-and-patch">
+<h3>Clean and Patch<a class="headerlink" href="#clean-and-patch" title="Permalink to this headline">¶</a></h3>
+<p>Main mesh cleaning routine. This routine attempts
+(but does not guarantee) to make closed volumes by
+merging vertices, then repeatedly removing bad faces and
+refilling boundary holes left in the mesh.
+Bad faces are made of vertices, which are either boundary vertices,
+or vertices of intersecting or overlapping faces.</p>
+<img alt="_images/mesh_heal_clean.png" src="_images/mesh_heal_clean.png" />
+</div>
+<div class="section" id="fill-holes-sharp">
+<h3>Fill Holes (Sharp)<a class="headerlink" href="#fill-holes-sharp" title="Permalink to this headline">¶</a></h3>
+<p>Fills boundary edges in object obj with triangles by a &#8216;sharpest angle
+first&#8217; approach. This method processes each continuous boundary edge
+loop and fills it with triangles by connecting two neighboring
+boundary edges. Connections are done in vertex angle sharpness order,
+so that a face is filled to the vertex whose boundary edges form
+shapest angle. Connection is not made if it would create intersecting
+faces. Triangle filling is repeated until all boundary edges that can
+be processed, have been processed.</p>
+<img alt="_images/mesh_heal_fill_sharp.png" src="_images/mesh_heal_fill_sharp.png" />
+</div>
+<div class="section" id="mh-recalc-norms">
+<h3>MH Recalc Norms<a class="headerlink" href="#mh-recalc-norms" title="Permalink to this headline">¶</a></h3>
+<p>Recalculates normals of object using a recursive outward face normal
+casting and propagation method (see below).</p>
+<p>This operator works best on closed surfaces, but can be run on
+non-manifold meshes as well. Algorithm also supports layers of
+surfaces inside surfaces, in which case each surface layer normals are
+set to opposite direction of outer layer normals. Faces whose normals
+could not be calculated are added to selection when operator is
+finished.</p>
+<p>This Cycles volumetric emission shader example below shows how normal
+direction affects the rendering result. The normals of the inner
+surfaces are corrected by this operator.</p>
+<img alt="_images/mesh_heal_recalc_norms.png" src="_images/mesh_heal_recalc_norms.png" />
+<p>Description of the algorithm:</p>
+<p>Normal calculation algorithm contains alternating casting and
+propagation phases. In casting phase, rays are cast from each
+unprocessed face to both current normal and opposite directions. If
+possible, normal information is set depending on what the rays hit
+(e.g. world boundary, or a face with confirmed normal direction) and
+the face is marked as processed. The method relies on getting correct
+results from casting phase. Therefore a few heuristics (search for
+overlapping and high aspect ration faces) are included to choose which
+faces are not included in casting.</p>
+<p>In propagation phase, the normal direction is propagated from
+processed faces to neighboring faces iteratively until all faces have
+been processed. The casting and propagation phases are repeated until
+all faces are processed.</p>
+</div>
+<div class="section" id="feedback">
+<h3>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://github.com/tkeskita/mesh_heal/issues">Report issues</a></p>
+</div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="&lt;no title&gt;" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Tuomo Keskitalo.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

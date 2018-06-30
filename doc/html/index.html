@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Mesh Heal add-on documentation &mdash; Mesh Heal add-on 1.0 documentation</title>
+  <title>&lt;no title&gt; &mdash; Mesh Heal add-on 1.0 documentation</title>
   
 
   
@@ -30,7 +30,8 @@
   
 
   
-    <link rel="top" title="Mesh Heal add-on 1.0 documentation" href="#"/> 
+    <link rel="top" title="Mesh Heal add-on 1.0 documentation" href="#"/>
+        <link rel="next" title="Mesh Heal add-on documentation" href="mesh_heal.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -79,7 +80,9 @@
           
             
             
-                <ul class="simple">
+                <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mesh_heal.html">Mesh Heal add-on documentation</a></li>
 </ul>
 
             
@@ -110,7 +113,7 @@
   <ul class="wy-breadcrumbs">
     <li><a href="#">Docs</a> &raquo;</li>
       
-    <li>Mesh Heal add-on documentation</li>
+    <li>&lt;no title&gt;</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -124,137 +127,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="mesh-heal-add-on-documentation">
-<h1>Mesh Heal add-on documentation<a class="headerlink" href="#mesh-heal-add-on-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="toctree-wrapper compound">
-<ul class="simple">
-</ul>
-</div>
-<div class="section" id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
-<p>Mesh Heal is an add-on for <a class="reference external" href="https://www.blender.org/">Blender</a>. It includes additional Blender operators for healing surface meshes. Operators include Recalculate Normals, Fill Holes and Clean Mesh. By default, Blender contains many routines that are meant for these tasks. Unfortunately, Blender&#8217;s default routines don&#8217;t always produce good results in some cases. Specifically, I run into problems when I was trying to turn non-manifold <a class="reference external" href="https://en.wikipedia.org/wiki/Isosurface">isosurfaces</a> into manifold surfaces with consistent face normals. For cases like that, you can try this add-on.</p>
-</div>
-<div class="section" id="warnings">
-<h2>Warnings<a class="headerlink" href="#warnings" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Mesh Heal operators are work in progress, use at your own risk.</li>
-<li>Mesh Heal operators are slow.</li>
-<li>Supported only on Blender version 2.79 (not yet version 2.8x).</li>
-</ul>
-</div>
-<div class="section" id="recommendations">
-<h2>Recommendations<a class="headerlink" href="#recommendations" title="Permalink to this headline">¶</a></h2>
-<p>First try to use Blender&#8217;s default routines to heal your mesh. Especially, please check the official <a class="reference external" href="https://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Modeling/PrintToolbox">3D Print Toolbox</a> add-on, which contains many mesh healing and analysis operators. If Blender&#8217;s default operators fail, try this add-on.</p>
-</div>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+  <div class="toctree-wrapper compound" id="contents">
+<p class="caption"><span class="caption-text">Contents:</span><a class="headerlink" href="#contents" title="Permalink to this toctree">¶</a></p>
 <ul>
-<li><p class="first">Source code is available in <a class="reference external" href="https://github.com/tkeskita/mesh_heal">https://github.com/tkeskita/mesh_heal</a></p>
-</li>
-<li><p class="first">Use &#8220;Clone or download&#8221; in github, and &#8220;Download ZIP&#8221;</p>
-</li>
-<li><p class="first">Start Blender, go to &#8220;User Preferences&#8221; &#8211;&gt; Install from File &#8211;&gt; open the downloaded zip file</p>
-</li>
-<li><p class="first">Activate the &#8220;Mesh Heal add-on&#8221;. It is located in &#8220;Community&#8221; level.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">Enabling Mesh Heal add-on will also enable <a class="reference external" href="https://wiki.blender.org/index.php/Extensions:2.6/Py/Scripts/Modeling/PrintToolbox">3D Print Toolbox</a> add-on (which is a requirement for Mesh Heal add-on).</p>
-</div>
+<li class="toctree-l1"><a class="reference internal" href="mesh_heal.html">Mesh Heal add-on documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mesh_heal.html#introduction">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh_heal.html#warnings">Warnings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh_heal.html#recommendations">Recommendations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh_heal.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mesh_heal.html#usage">Usage</a></li>
+</ul>
 </li>
 </ul>
-</div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>Mesh Heal add-on tools are located in &#8220;Print 3D&#8221; tab in the operator panel, below or above 3D Print Toolbox.</p>
-<img alt="_images/mesh_heal_tab.png" src="_images/mesh_heal_tab.png" />
-<p>Operators are available in object mode, and they are listed in operator search menu prepended with &#8220;MH&#8221;.</p>
-<div class="section" id="remove-non-manifold">
-<h3>Remove Non-Manifold<a class="headerlink" href="#remove-non-manifold" title="Permalink to this headline">¶</a></h3>
-<p>This operator combines several cleaning actions:</p>
-<ul class="simple">
-<li>Merges closeby vertices using the distance value set in the operator panel</li>
-<li>Runs the Delete Overlapping Neighbor Faces operator</li>
-<li>Removes non-manifold vertices (not boundary vertices), edges and faces</li>
-<li>Deletes edges and vertices that are not part of faces</li>
-</ul>
-</div>
-<div class="section" id="delete-overlapping-neighbor-faces">
-<h3>Delete Overlapping Neighbor Faces<a class="headerlink" href="#delete-overlapping-neighbor-faces" title="Permalink to this headline">¶</a></h3>
-<p>Deletes overlapping neighbor faces and removes dangling edges
-and vertices. Neighbor faces mean faces that share an edge.
-Overlapping is determined by face-face angle measured at the shared edge.</p>
-<img alt="_images/mesh_heal_delete_overlapping.png" src="_images/mesh_heal_delete_overlapping.png" />
-</div>
-<div class="section" id="sew-mesh">
-<h3>Sew Mesh<a class="headerlink" href="#sew-mesh" title="Permalink to this headline">¶</a></h3>
-<p>Reduces number of boundary edges in mesh by merging pairs of closeby
-boundary vertices (sew open seams). Boundary vertices are merged
-if ratio of vertex pair distance to smallest boundary edge length
-(of edges connected to either vertex) is smaller than threshold.</p>
-<img alt="_images/mesh_heal_sew.png" src="_images/mesh_heal_sew.png" />
-</div>
-<div class="section" id="clean-mesh">
-<h3>Clean Mesh<a class="headerlink" href="#clean-mesh" title="Permalink to this headline">¶</a></h3>
-<p>Main mesh cleaning routine. This routine attempts
-(but does not guarantee) to make closed volumes by
-merging vertices, then repeatedly removing bad faces and
-refilling boundary holes left in the mesh.
-Bad faces are made of vertices, which are either boundary vertices,
-or vertices of intersecting or overlapping faces.</p>
-<img alt="_images/mesh_heal_clean.png" src="_images/mesh_heal_clean.png" />
-</div>
-<div class="section" id="fill-holes-sharp">
-<h3>Fill Holes (Sharp)<a class="headerlink" href="#fill-holes-sharp" title="Permalink to this headline">¶</a></h3>
-<p>Fills boundary edges in object obj with triangles by a &#8216;sharpest angle
-first&#8217; approach. This method processes each continuous boundary edge
-loop and fills it with triangles by connecting two neighboring
-boundary edges. Connections are done in vertex angle sharpness order,
-so that a face is filled to the vertex whose boundary edges form
-shapest angle. Connection is not made if it would create intersecting
-faces. Triangle filling is repeated until all boundary edges that can
-be processed, have been processed.</p>
-<img alt="_images/mesh_heal_fill_sharp.png" src="_images/mesh_heal_fill_sharp.png" />
-</div>
-<div class="section" id="mh-recalc-norms">
-<h3>MH Recalc Norms<a class="headerlink" href="#mh-recalc-norms" title="Permalink to this headline">¶</a></h3>
-<p>Recalculates normals of object using a recursive outward face normal
-casting and propagation method (see below).</p>
-<p>This operator works best on closed surfaces, but can be run on
-non-manifold meshes as well. Algorithm also supports layers of
-surfaces inside surfaces, in which case each surface layer normals are
-set to opposite direction of outer layer normals. Faces whose normals
-could not be calculated are added to selection when operator is
-finished.</p>
-<p>This Cycles volumetric emission shader example below shows how normal
-direction affects the rendering result. The normals of the inner
-surfaces are automatically corrected.</p>
-<img alt="_images/mesh_heal_recalc_norms.png" src="_images/mesh_heal_recalc_norms.png" />
-<p>Description of the algorithm:</p>
-<p>Normal calculation algorithm contains alternating casting and
-propagation phases. In casting phase, rays are cast from each
-unprocessed face to both current normal and opposite directions. If
-possible, normal information is set depending on what the rays hit
-(e.g. world boundary, or a face with confirmed normal direction) and
-the face is marked as processed. The method relies on getting correct
-results from casting phase. Therefore a few heuristics (search for
-overlapping and high aspect ration faces) are included to choose which
-faces are not included in casting.</p>
-<p>In propagation phase, the normal direction is propagated from
-processed faces to neighboring faces iteratively until all faces have
-been processed. The casting and propagation phases are repeated until
-all faces are processed.</p>
-</div>
-<div class="section" id="feedback">
-<h3>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline">¶</a></h3>
-<p><a class="reference external" href="https://github.com/tkeskita/mesh_heal/issues">Report issues</a></p>
-</div>
-</div>
 </div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mesh_heal.html" class="btn btn-neutral float-right" title="Mesh Heal add-on documentation" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
   
 
   <hr/>
