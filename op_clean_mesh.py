@@ -79,28 +79,22 @@ def clean_and_patch(obj):
     Intersecting faces and boundary edges may remain in mesh.
     """
 
-    # go to vertex select mode and select all
-    bpy.ops.object.mode_set(mode = 'EDIT')
-    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-    bpy.ops.mesh.select_all(action = 'SELECT')
-
-    # initial clean-up, merge closeby vertices
-    bpy.ops.mesh.remove_doubles(threshold=0.0004) # 0.0001
-    # dissolve zero area faces and zero length edges
-    bpy.ops.mesh.dissolve_degenerate()
-    bpy.ops.mesh.select_all(action = 'DESELECT')
+    # First simple clean
+    bpy.ops.mesh.mesh_heal_simple_clean()
 
     n_verts = 1 # initialize number of bad vertices
     i = 0 # clean-up round counter
-    max_iter = 2
+    max_iter = 2 # maximum iterations
+
     while n_verts > 0:
         i += 1
         
-        # Give up after two iterations
+        # Give up after maxiumum iterations
         if i > max_iter:
             break
         
         # Delete bad faces and remove dangling edges and verts
+        bpy.ops.object.mode_set(mode = 'EDIT')
         clean_mesh_select_bad_verts()
         bpy.ops.mesh.delete(type='ONLY_FACE')
         bpy.ops.mesh.select_all(action = 'DESELECT')
@@ -132,18 +126,20 @@ def clean_and_patch(obj):
                                                ngon_method='BEAUTY')
 
         # Count remaining bad vertices
-        clean_mesh_select_bad_verts()   
-        bm = bmesh.from_edit_mesh(obj.data)
-        verts = [ v.index for v in bm.verts if v.select ]
+        # BMesh method does not get updates to object data, so force
+        # updates via Object mode instead
+        # bm = bmesh.from_edit_mesh(obj.data)
+        # verts = [ v.index for v in bm.verts if v.select ]
+        # bm.free()
+        clean_mesh_select_bad_verts()
+        bpy.ops.object.mode_set(mode = 'OBJECT')
+        verts = [v for v in obj.data.vertices if v.select]
         n_verts = len(verts)
         l.debug("Iteration %d: " % i \
                 + "bad verts remaining: %d" % n_verts)
 
     l.info("Stopped at iteration %d" % i \
            + ", bad verts remaining: %d" % n_verts)
-    bm.free()
-    bpy.ops.mesh.select_all(action = 'DESELECT')
-    bpy.ops.object.mode_set(mode = 'OBJECT')
     return n_verts
 
 def clean_mesh_select_bad_verts():
@@ -156,7 +152,9 @@ def clean_mesh_select_bad_verts():
     Note 2: Shared vertices (or edges) are not considered a problem either. 
     If needed you can use "rip" tool to get rid of them later on.
     """
-    bpy.ops.mesh.select_all(action = 'DESELECT')
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_mode(type='VERT')
+    bpy.ops.mesh.select_all(action='DESELECT')
 
     # Select intersecting faces
     bpy.ops.mesh.select_mode(type='FACE')
