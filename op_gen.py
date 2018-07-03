@@ -228,7 +228,7 @@ def face_ray_cast(source, co, ray_dir, fi_list, max_ray_len=float_info.max):
     # Twisted faces can cause ray hitting itself.
     # If that happens, then cast another ray starting from near hit point.
     iter = 0
-    maxiter = 12
+    maxiter = 16
     while hit_index in fi_list and iter < maxiter:
         ray_start = hit_co
         EPS *= 2 # Increase EPS to speed up convergence
