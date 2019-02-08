@@ -359,7 +359,7 @@ def propagate_face_normal_from_neighbor(f, f_neighbor, e=None):
                 
     # Calculate cos(eta) where eta is the angle between
     # this face current normal and f_neighbor current normal
-    cos_eta = f.normal * f_neighbor.normal
+    cos_eta = f.normal @ f_neighbor.normal
 
     # Heuristic to flip (or not to flip) this face normal:
     #
@@ -373,8 +373,8 @@ def propagate_face_normal_from_neighbor(f, f_neighbor, e=None):
     if (abs(cos_epsilon) < MIN_COS_ANGLE):
         vec_f2f = f.calc_center_median() - f_neighbor.calc_center_median() 
         vec_f2f.normalize()
-        cos_theta = vec_f2f * f.normal
-        cos_omega = vec_f2f * f_neighbor.normal
+        cos_theta = vec_f2f @ f.normal
+        cos_omega = vec_f2f @ f_neighbor.normal
         if (cos_theta * cos_omega > 0):
             f.normal_flip()
         l.debug("Orthogonal Face %d, " % f_neighbor.index \

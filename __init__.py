@@ -21,7 +21,7 @@
 bl_info = {
     "name": "Mesh Healing Tools",
     "author": "Tuomo Keskitalo",
-    "blender": (2, 79, 0),
+    "blender": (2, 80, 0),
     "location": "3D View > Toolbox",
     "description": "Utilities for healing arbitrary surface meshes",
     "warning": "WIP",
@@ -62,14 +62,14 @@ if not loaded_default:
     addon_utils.enable(addon, default_set=True, persistent=True)
 
 class MeshHealSettings(bpy.types.PropertyGroup):
-    vert_merge_distance = bpy.props.FloatProperty(
+    vert_merge_distance: bpy.props.FloatProperty(
         name="Vertex Merge Distance",
         description="Maximum distance for merging closeby vertices",
         default=0.001,
         precision=5,
         min=0.0, max=float_info.max
     )
-    sew_ratio_threshold = bpy.props.FloatProperty(
+    sew_ratio_threshold: bpy.props.FloatProperty(
         name="Max Sew Ratio",
         description="Maximum allowed distance ratio for sewing",
         default=0.3,
@@ -77,11 +77,11 @@ class MeshHealSettings(bpy.types.PropertyGroup):
         min=0.001, max=1.0
     )
     
-class MeshHealToolBarInObjectMode(bpy.types.Panel):
+class MeshHeal_PT_object_mode(bpy.types.Panel):
     """Mesh Heal tool bar panel in object mode"""
     bl_label = "Mesh Heal (MH)"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_category = "3D Printing"
     bl_idname = "Mesh_heal_object"
     bl_context = "objectmode"
@@ -116,11 +116,11 @@ class MeshHealToolBarInObjectMode(bpy.types.Panel):
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
         
-class MeshHealToolBarInEditMode(bpy.types.Panel):
+class MeshHeal_PT_edit_mode(bpy.types.Panel):
     """Mesh Heal tool bar panel in edit mode"""
     bl_label = "Mesh Heal (MH)"
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_category = "3D Printing"
     bl_idname = "Mesh_heal_edit"
     bl_context = "mesh_edit"
@@ -154,8 +154,8 @@ class MeshHealToolBarInEditMode(bpy.types.Panel):
 # Registration
 
 classes = (
-    MeshHealToolBarInObjectMode,
-    MeshHealToolBarInEditMode,
+    MeshHeal_PT_object_mode,
+    MeshHeal_PT_edit_mode,
     op_norms.MeshHealRecalcNormsOperator,
     op_clean_mesh.MeshHealCleanAndPatchOperator,
     op_clean_mesh.MeshHealSimpleCleanOperator,

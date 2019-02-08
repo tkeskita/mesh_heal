@@ -186,7 +186,7 @@ def obj_probe_hit_face(obj, bm, f_co, f_dir, f_index):
     
     # Calculate alignment of hit normal direction with this face normal.
     # Note: Can't use hit_no because object data normals can be out of date.
-    cos_theta = f_dir * bm.faces[hit_index].normal    
+    cos_theta = f_dir @ bm.faces[hit_index].normal    
     if cos_theta > 0:
         return (False, hit_index)
     else:
@@ -214,7 +214,8 @@ def face_ray_cast(source, co, ray_dir, fi_list, max_ray_len=float_info.max):
     # ray_cast returns slighty different things for Objects and BVHTrees
     if isinstance(source, bpy.types.Object):
         ok, hit_co, hit_no, hit_index = \
-            source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
+            source.ray_cast(ray_start + EPS*ray_dir, \
+                            ray_dir, distance=max_ray_len)
     elif isinstance(source, mathutils.bvhtree.BVHTree):
         hit_co, hit_no, hit_index, hit_length = \
             source.ray_cast(ray_start + EPS*ray_dir, ray_dir, max_ray_len)
@@ -284,7 +285,7 @@ def calc_vert_edge_edge_angle(v, e1, e2):
     
     # Calculate angle [rad] between vec1 and vec2
     # Limit -1.0 <= vecprod <= 1.0 so that value is physical
-    vecprod = max(-1.0, min(1.0, vec1 * vec2))
+    vecprod = max(-1.0, min(1.0, vec1 @ vec2))
     angle = math.acos(vecprod) 
     l.debug("Angle between edges %d and %d " % (e1.index, e2.index) \
         + "is %f" % angle)
@@ -366,7 +367,7 @@ def edge_vec_vec_cos_angle(e, vec1, vec2):
     vec_ortho_f_neighbor.normalize()
 
     # Finally calculate cos(angle) between faces
-    cos_epsilon = vec_ortho_f * vec_ortho_f_neighbor
+    cos_epsilon = vec_ortho_f @ vec_ortho_f_neighbor
     # Limit -1.0 <= cos_epsilon <= 1.0 for physical correctness
     cos_epsilon = max(-1.0, min(1.0, cos_epsilon))
     return cos_epsilon

@@ -96,7 +96,7 @@ def delete_overlap(obj):
     n_appends = len(flist)    
 
     # Delete overlappings
-    bmesh.ops.delete(bm, geom=flist, context=3) # context 3 = DEL_ONLYFACES
+    bmesh.ops.delete(bm, geom=flist, context='FACES_ONLY') # context 3 = DEL_ONLYFACES
 
     # Save final bmesh back to object
     bmesh_to_object(obj, bm)
