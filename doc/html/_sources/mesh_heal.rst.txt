@@ -19,7 +19,8 @@ Warnings
 
 * Mesh Heal operators are work in progress, use at your own risk.
 * Mesh Heal operators are slow.
-* Supported on Blender version 2.79 and 2.80 (latest development version).
+* Supported on Blender version 2.79 (blender2.7 branch) and
+  2.80 (master branch).
 
 Recommendations
 ---------------
@@ -32,10 +33,14 @@ default operators fail, try this add-on.
 Installation
 ------------
 
-* Source code is available in https://github.com/tkeskita/mesh_heal
-* Use "Clone or download" in github, and "Download ZIP"
-* Start Blender, go to "User Preferences" --> Install from File --> open the downloaded zip file
-* Activate the "Mesh Heal add-on" in User preferences. It is located in "Community" level of Blender add-ons.
+* Source code is available in https://github.com/tkeskita/mesh_heal.
+  Installation instructions:
+   * First select branch ("master" for Blender 2.80 or "blender2.7" for Blender 2.79)
+   * Then select "Clone or download"
+   * Finally select "Download ZIP"
+* Start Blender, go to "Preferences" --> Install from File --> open the downloaded zip file
+* Activate the "Mesh Heal add-on" in Preferences.
+  It is located in "Community" level of Blender add-ons.
 	  
   .. note::
      Enabling Mesh Heal add-on will also enable 3D Print
