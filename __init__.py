@@ -83,7 +83,7 @@ class MeshHeal_PT_object_mode(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "3D Printing"
-    bl_idname = "Mesh_heal_object"
+    bl_idname = "VIEW3D_PT_MeshHeal_Object"
     bl_context = "objectmode"
 
     @classmethod
@@ -122,7 +122,7 @@ class MeshHeal_PT_edit_mode(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "3D Printing"
-    bl_idname = "Mesh_heal_edit"
+    bl_idname = "VIEW3D_PT_MeshHeal_Edit"
     bl_context = "mesh_edit"
 
     @classmethod
