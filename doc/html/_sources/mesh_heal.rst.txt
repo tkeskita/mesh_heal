@@ -35,9 +35,11 @@ Installation
 
 * Source code is available in https://github.com/tkeskita/mesh_heal.
   Installation instructions:
+
    * First select branch ("master" for Blender 2.80 or "blender2.7" for Blender 2.79)
    * Then select "Clone or download"
    * Finally select "Download ZIP"
+
 * Start Blender, go to "Preferences" --> Install from File --> open the downloaded zip file
 * Activate the "Mesh Heal add-on" in Preferences.
   It is located in "Community" level of Blender add-ons.
@@ -50,8 +52,7 @@ Usage
 -----
 
 Mesh Heal (MH) add-on tools are currently available in object
-mode. Tools are located in "Print 3D" tab in the Side Bar, below
-or above 3D Print Toolbox.
+mode. Tools are located in "Mesh Heal" tab in the Side Bar.
 
 .. image:: images/mesh_heal_tab.png
 
@@ -90,6 +91,20 @@ if ratio of vertex pair distance to smallest boundary edge length
 (of edges connected to either vertex) is smaller than threshold.
 
 .. image:: images/mesh_heal_sew.png
+
+
+Triangulate Twisted Faces
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Splits twisted faces into triangular faces. Twist is determined by the
+angle between face normal and vertex vectors. Vertex vector is the
+vector from face median center point to a face vertex. Angles of all
+vertex vectors are checked, and the maximum angle is compared agains
+given angle parameter. If maximum angle exceeds parameter value, then
+the face is split into triangles and added to current face
+selection.
+
+.. image:: images/mesh_heal_twist.png
 
 
 Clean and Patch

@@ -88,6 +88,7 @@
 <li class="toctree-l3"><a class="reference internal" href="#simple-clean">Simple Clean</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#delete-overlapping-neighbor-faces">Delete Overlapping Neighbor Faces</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#sew-mesh">Sew Mesh</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#triangulate-twisted-faces">Triangulate Twisted Faces</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#clean-and-patch">Clean and Patch</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#fill-holes-sharp">Fill Holes (Sharp)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#mh-recalc-norms">MH Recalc Norms</a></li>
@@ -216,8 +217,7 @@ Toolbox add-on (which is a requirement for Mesh Heal add-on).</p>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
 <p>Mesh Heal (MH) add-on tools are currently available in object
-mode. Tools are located in “Print 3D” tab in the Side Bar, below
-or above 3D Print Toolbox.</p>
+mode. Tools are located in “Mesh Heal” tab in the Side Bar.</p>
 <img alt="_images/mesh_heal_tab.png" src="_images/mesh_heal_tab.png" />
 <p>All operators are available in object mode (and some in edit mode as
 well). Operators are listed in operator search menu prepended with
@@ -248,6 +248,17 @@ boundary vertices (sew open seams). Boundary vertices are merged
 if ratio of vertex pair distance to smallest boundary edge length
 (of edges connected to either vertex) is smaller than threshold.</p>
 <img alt="_images/mesh_heal_sew.png" src="_images/mesh_heal_sew.png" />
+</div>
+<div class="section" id="triangulate-twisted-faces">
+<h3>Triangulate Twisted Faces<a class="headerlink" href="#triangulate-twisted-faces" title="Permalink to this headline">¶</a></h3>
+<p>Splits twisted faces into triangular faces. Twist is determined by the
+angle between face normal and vertex vectors. Vertex vector is the
+vector from face median center point to a face vertex. Angles of all
+vertex vectors are checked, and the maximum angle is compared agains
+given angle parameter. If maximum angle exceeds parameter value, then
+the face is split into triangles and added to current face
+selection.</p>
+<img alt="_images/mesh_heal_twist.png" src="_images/mesh_heal_twist.png" />
 </div>
 <div class="section" id="clean-and-patch">
 <h3>Clean and Patch<a class="headerlink" href="#clean-and-patch" title="Permalink to this headline">¶</a></h3>
