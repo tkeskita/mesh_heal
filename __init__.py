@@ -76,13 +76,19 @@ class MeshHealSettings(bpy.types.PropertyGroup):
         precision=5,
         min=0.001, max=1.0
     )
+    max_abs_twist_angle: bpy.props.FloatProperty(
+        name="Maximum Angle (in Degrees) for Determining Twist",
+        description="Maximum allowed angle (in degrees) for twisted faces",
+        default=3.0,
+        min=0.0, max=90.0
+    )
     
 class MeshHeal_PT_object_mode(bpy.types.Panel):
     """Mesh Heal tool bar panel in object mode"""
     bl_label = "Mesh Heal (MH)"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "3D Printing"
+    bl_category = "Mesh Heal"
     bl_idname = "VIEW3D_PT_MeshHeal_Object"
     bl_context = "objectmode"
 
@@ -109,6 +115,11 @@ class MeshHeal_PT_object_mode(bpy.types.Panel):
         rowsub.operator("mesh.mesh_heal_sew", text="Sew Mesh")
         rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
 
+        col = layout.column()
+        rowsub = col.row(align=True)
+        rowsub.operator("mesh.mesh_heal_triangulate_twisted", text="Triangulate Twists")
+        rowsub.prop(mesh_heal, "max_abs_twist_angle", text="angle")
+
         row = layout.row()
         row.operator("mesh.mesh_heal_clean_and_patch", text="Clean and Patch")
         row = layout.row()
@@ -121,7 +132,7 @@ class MeshHeal_PT_edit_mode(bpy.types.Panel):
     bl_label = "Mesh Heal (MH)"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "3D Printing"
+    bl_category = "Mesh Heal"
     bl_idname = "VIEW3D_PT_MeshHeal_Edit"
     bl_context = "mesh_edit"
 
@@ -159,6 +170,7 @@ classes = (
     op_norms.MeshHealRecalcNormsOperator,
     op_clean_mesh.MeshHealCleanAndPatchOperator,
     op_clean_mesh.MeshHealSimpleCleanOperator,
+    op_clean_mesh.MeshHealTriangulateTwistedFacesOperator,
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
     op_delete_overlap.MeshHealDeleteOverlapOperator,

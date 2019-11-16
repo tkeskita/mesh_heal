@@ -217,3 +217,56 @@ def clean_mesh_simple_clean(obj, mdist):
     bpy.ops.mesh.print3d_clean_isolated()
 
     
+class MeshHealTriangulateTwistedFacesOperator(bpy.types.Operator):
+    """Triangulate Twisted Faces (Mesh Heal)"""
+    bl_idname = "mesh.mesh_heal_triangulate_twisted"
+    bl_label = "MH Triangulate Twists"
+
+    @classmethod
+    def poll(cls, context):
+        ob = context.active_object
+        return (ob and ob.type == 'MESH' and context.mode == 'OBJECT')
+
+    def execute(self, context):
+        saved_mode = context.active_object.mode
+        n = triangulate_twists(context.active_object)
+        bpy.ops.object.mode_set(mode = saved_mode)
+        self.report({'INFO'}, "%d faces were split" % n)
+        return {'FINISHED'}
+
+def triangulate_twists(ob):
+    """Triangulate Twisted Faces (Mesh Heal)"""
+
+    import bmesh
+    import math
+    bpy.ops.object.mode_set(mode = 'EDIT')
+    bm = bmesh.from_edit_mesh(ob.data)
+
+    twistfaces = []
+
+    # Maximum absolute cosine of angle between face normal vector and
+    # center-to-corner vector
+    angle = bpy.context.scene.mesh_heal.max_abs_twist_angle
+    max_abs_cos_alpha = math.cos((90.0 - angle) / 90.0 * math.pi / 2.0)
+
+    # Find all twisted faces
+    for f in bm.faces:
+        norvec = f.normal
+        co = f.calc_center_median()
+        for v in f.verts:
+            vertvec = v.co - co
+            vertvec.normalize()
+            abs_cos_alpha = abs(vertvec @ norvec)
+            l.debug("face %d abs_cos_alpha %f" % (f.index, abs_cos_alpha))
+            if abs_cos_alpha > max_abs_cos_alpha:
+                if f not in twistfaces:
+                    twistfaces.append(f)
+                    f.select = True
+
+    # Triangulate twisted faces
+    bmesh.ops.triangulate(bm, faces=twistfaces)
+
+    bmesh.update_edit_mesh(ob.data, True)
+    bm.free()
+    return len(twistfaces)
+
