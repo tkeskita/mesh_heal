@@ -103,9 +103,12 @@ def delete_overlap(obj):
     bm.free()
 
     # Remove dangling edges and vertices
-    bpy.ops.mesh.print3d_clean_isolated()
+    bpy.ops.object.mode_set(mode = 'EDIT')
+    bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True)
+    bpy.ops.object.mode_set(mode = 'OBJECT')
 
     return n_appends
+
 
 def add_to_flist(f, flist):
     """Selects and appends face f to face list flist, 
