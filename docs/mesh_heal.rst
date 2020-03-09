@@ -14,13 +14,15 @@ problems when I was trying to convert non-manifold `isosurfaces
 <https://en.wikipedia.org/wiki/Manifold>`_ surfaces with consistent
 face normals appropriate for volumetric rendering.
 
+.. image:: images/mesh_heal_title.png
+
 Warnings
 --------
 
-* Mesh Heal operators are work in progress, use at your own risk.
+* Mesh Heal operators are experimental, use at your own risk.
 * Mesh Heal operators are slow.
 * Supported on Blender version 2.79 (blender2.7 branch) and
-  2.80 (master branch).
+  newest release of Blender 2.8 series (master branch).
 
 Recommendations
 ---------------
@@ -36,7 +38,7 @@ Installation
 * Source code is available in https://github.com/tkeskita/mesh_heal.
   Installation instructions:
 
-   * First select branch ("master" for Blender 2.80 or "blender2.7" for Blender 2.79)
+   * First select branch ("master" for lates Blender 2.8 or "blender2.7" for Blender 2.79)
    * Then select "Clone or download"
    * Finally select "Download ZIP"
 
@@ -52,7 +54,7 @@ Usage
 -----
 
 Mesh Heal (MH) add-on tools are currently available in object
-mode. Tools are located in "Mesh Heal" tab in the Side Bar.
+mode. Tools are located in "Mesh Heal" tab in the Sidebar.
 
 .. image:: images/mesh_heal_tab.png
 
@@ -174,5 +176,5 @@ all faces are processed.
 Feedback
 ^^^^^^^^
 
-`Report issues <https://github.com/tkeskita/mesh_heal/issues>`_
+`Please report issues at github <https://github.com/tkeskita/mesh_heal/issues>`_
 
