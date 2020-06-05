@@ -97,7 +97,7 @@ def clean_and_patch(obj):
         bpy.ops.object.mode_set(mode = 'EDIT')
         clean_mesh_select_bad_verts()
         bpy.ops.mesh.delete(type='ONLY_FACE')
-        bpy.ops.mesh.select_all(action = 'DESELECT')
+        bpy.ops.mesh.select_all(action='SELECT')
         bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True)
 
         # Fill holes with faces, where possible
@@ -211,6 +211,7 @@ def clean_mesh_simple_clean(obj, mdist):
     bpy.ops.mesh.delete(type='EDGE')
 
     # Remove dangling edges and verts
+    bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True)
     bpy.ops.object.mode_set(mode='OBJECT')
 

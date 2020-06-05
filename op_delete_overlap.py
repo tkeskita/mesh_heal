@@ -104,6 +104,7 @@ def delete_overlap(obj):
 
     # Remove dangling edges and vertices
     bpy.ops.object.mode_set(mode = 'EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.delete_loose(use_verts=True, use_edges=True)
     bpy.ops.object.mode_set(mode = 'OBJECT')
 
