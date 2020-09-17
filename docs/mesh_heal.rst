@@ -21,14 +21,16 @@ Warnings
 
 * Mesh Heal operators are experimental, use at your own risk.
 * Mesh Heal operators are slow.
-* Supported on Blender version 2.79 (blender2.7 branch) and
-  newest release of Blender 2.8 series (master branch).
+* Supported on newest stable release of Blender (2.90 or later) and
+  LTS version (2.83).
+  Old version for Blender 2.79 is available in *blender2.7* branch.
 
 Recommendations
 ---------------
 
 First try to use Blender's default routines to heal your
-mesh. Especially, please check the official 3D Print Toolbox add-on,
+mesh. Especially, please check `the official 3D Print Toolbox add-on
+<https://docs.blender.org/manual/en/latest/addons/mesh/3d_print_toolbox.html>`_,
 which contains many mesh healing and analysis operators. If Blender's
 default operators fail, try this add-on.
 
@@ -38,9 +40,8 @@ Installation
 * Source code is available in https://github.com/tkeskita/mesh_heal.
   Installation instructions:
 
-   * First select branch ("master" for lates Blender 2.8 or "blender2.7" for Blender 2.79)
-   * Then select "Clone or download"
-   * Finally select "Download ZIP"
+   * First select branch ("master" or "blender2.7")
+   * Then select **Code** -> **Download ZIP**
 
 * Start Blender, go to "Preferences" --> Install from File --> open the downloaded zip file
 * Activate the "Mesh Heal add-on" in Preferences.
