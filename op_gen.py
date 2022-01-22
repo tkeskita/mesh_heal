@@ -93,7 +93,7 @@ def select_face_index(ilist):
     for i in ilist:    
         bm.faces[i].select = True
         
-    bmesh.update_edit_mesh(obj.data, True)    
+    bmesh.update_edit_mesh(obj.data)
 
 def select_edge_index(ilist):
     """Add argument edge index or list of edge indices to active selection."""

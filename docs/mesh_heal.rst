@@ -20,10 +20,9 @@ Warnings
 --------
 
 * Mesh Heal operators are experimental, use at your own risk.
-* Mesh Heal operators are slow.
-* Supported on newest stable release of Blender (2.90 or later) and
-  LTS version (2.83).
-  Old version for Blender 2.79 is available in *blender2.7* branch.
+* Mesh Heal operators are slow on large meshes.
+* Supported on newest LTS release of Blender (currently 2.93), but
+  may work on any Blender version starting from 2.83.
 
 Recommendations
 ---------------
@@ -37,13 +36,10 @@ default operators fail, try this add-on.
 Installation
 ------------
 
-* Source code is available in https://github.com/tkeskita/mesh_heal.
-  Installation instructions:
-
-   * First select branch ("master" or "blender2.7")
-   * Then select **Code** -> **Download ZIP**
-
-* Start Blender, go to "Preferences" --> Install from File --> open the downloaded zip file
+* Source code is available in https://github.com/tkeskita/mesh_heal
+  --> Code --> Download zip.
+* Start Blender, go to "Preferences" --> Add-ons --> Install from File
+  --> open the downloaded zip file.
 * Activate the "Mesh Heal add-on" in Preferences.
   It is located in "Community" level of Blender add-ons.
 	  

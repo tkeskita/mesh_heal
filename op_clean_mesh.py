@@ -265,7 +265,7 @@ def triangulate_twists(ob):
     # Triangulate twisted faces
     bmesh.ops.triangulate(bm, faces=twistfaces)
 
-    bmesh.update_edit_mesh(ob.data, True)
+    bmesh.update_edit_mesh(ob.data)
     bm.free()
     return len(twistfaces)
 
