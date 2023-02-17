@@ -26,4 +26,6 @@ https://mesh_heal.readthedocs.io.
 
 ## Feedback
 
-[Please report issues at github](https://github.com/tkeskita/mesh_heal/issues)  
+[Please report issues at github](https://github.com/tkeskita/mesh_heal/issues).
+
+If you like this add-on, please star the project in GitHub!
