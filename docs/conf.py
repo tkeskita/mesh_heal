@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = u'Mesh Heal add-on'
-copyright = u'2022, Tuomo Keskitalo'
+copyright = u'2023, Tuomo Keskitalo'
 author = u'Tuomo Keskitalo'
 
 # The short X.Y version

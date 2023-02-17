@@ -22,9 +22,9 @@ bl_info = {
     "name": "Mesh Healing Tools",
     "author": "Tuomo Keskitalo",
     "blender": (2, 80, 0),
-    "location": "3D View > Toolbox",
-    "description": "Utilities for healing arbitrary surface meshes",
-    "warning": "WIP",
+    "location": "3D View > Sidebar",
+    "description": "Utilities for healing arbitrary polygon surface meshes",
+    "warning": "Experimental",
     "wiki_url": "https://github.com/tkeskita/mesh_heal",
     "tracker_url": "https://github.com/tkeskita/mesh_heal/issues",
     "support": 'COMMUNITY',
@@ -176,6 +176,15 @@ classes = (
     op_delete_overlap.MeshHealDeleteOverlapOperator,
     MeshHealSettings,
 )
+
+def menu_func(self, context):
+    self.layout.operator(op_norms.MeshHealRecalcNormsOperator.bl_idname)
+    self.layout.operator(op_clean_mesh.MeshHealCleanAndPatchOperator.bl_idname)
+    self.layout.operator(op_clean_mesh.MeshHealSimpleCleanOperator.bl_idname)
+    self.layout.operator(op_clean_mesh.MeshHealTriangulateTwistedFacesOperator.bl_idname)
+    self.layout.operator(op_fill_holes.MeshHealFillHolesSharpOperator.bl_idname)
+    self.layout.operator(op_sew.MeshHealSewOperator.bl_idname)
+    self.layout.operator(op_delete_overlap.MeshHealDeleteOverlapOperator.bl_idname)
     
 def register():
     for cls in classes:
@@ -183,8 +192,12 @@ def register():
 
     bpy.types.Scene.mesh_heal = \
         bpy.props.PointerProperty(type = MeshHealSettings)
+    if "VIEW3D_MT_object_cleanup" in dir(bpy.types):
+        bpy.types.VIEW3D_MT_object_cleanup.append(menu_func)
     
 def unregister():
+    if "VIEW3D_MT_object_cleanup" in dir(bpy.types):
+        bpy.types.VIEW3D_MT_object_cleanup.remove(menu_func)
     for cls in classes:
         bpy.utils.unregister_class(cls)
 

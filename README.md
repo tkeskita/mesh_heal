@@ -5,7 +5,8 @@
 Mesh Heal is an add-on for [Blender](https://www.blender.org/). It
 includes additional Blender operators for healing surface meshes. By
 default, Blender contains many routines that are meant for these
-tasks. Unfortunately, Blender’s default routines don’t always produce
+tasks, e.g. tools in the *3D-Print Toolbox* add-on.
+Unfortunately, Blender’s default routines don’t always produce
 good results in some difficult cases. Specifically, I run into
 problems when I was trying to convert non-manifold isosurfaces into
 manifold surfaces with consistent face normals appropriate for
@@ -14,6 +15,8 @@ volumetric rendering.
 <p align="center">
 <img src="docs/images/mesh_heal_title.png">
 </p>
+
+Add-on was last tested with Blender LTS 3.3.
 
 ## Documentation
 

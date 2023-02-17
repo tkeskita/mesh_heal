@@ -5,9 +5,10 @@ Introduction
 ------------
 
 Mesh Heal is an add-on for `Blender <https://www.blender.org/>`_. It
-includes additional Blender operators for healing surface meshes. By
+includes additional Blender operators for healing polygon surface meshes. By
 default, Blender contains many routines that are meant for these
-tasks. Unfortunately, Blender's default routines don't always produce
+tasks, e.g. tools in the *3D-Print Toolbox* add-on.
+Unfortunately, Blender's default routines don't always produce
 good results in some difficult cases. Specifically, I run into
 problems when I was trying to convert non-manifold `isosurfaces
 <https://en.wikipedia.org/wiki/Isosurface>`_ into `manifold
@@ -21,8 +22,8 @@ Warnings
 
 * Mesh Heal operators are experimental, use at your own risk.
 * Mesh Heal operators are slow on large meshes.
-* Supported on newest LTS release of Blender (currently 2.93), but
-  may work on any Blender version starting from 2.83.
+* Supported on newest LTS release of Blender (currently 3.3), but
+  should work on any Blender version starting from 2.83.
 
 Recommendations
 ---------------
@@ -155,13 +156,13 @@ surfaces are corrected by this operator.
 
 Description of the algorithm:
 
-Normal calculation algorithm contains alternating casting and
+Normal calculation algorithm contains alternating ray casting and
 propagation phases. In casting phase, rays are cast from each
 unprocessed face to both current normal and opposite directions. If
 possible, normal information is set depending on what the rays hit
 (e.g. world boundary, or a face with confirmed normal direction) and
 the face is marked as processed. The method relies on getting correct
-results from casting phase. Therefore a few heuristics (search for
+results from the casting phase. Therefore a few heuristics (search for
 overlapping and high aspect ration faces) are included to choose which
 faces are not included in casting.
 
@@ -173,5 +174,6 @@ all faces are processed.
 Feedback
 ^^^^^^^^
 
-`Please report issues at github <https://github.com/tkeskita/mesh_heal/issues>`_
+`Please report issues at GitHub <https://github.com/tkeskita/mesh_heal/issues>`_
 
+If you like this add-on, please star the project in GitHub!
