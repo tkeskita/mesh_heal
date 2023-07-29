@@ -16,13 +16,13 @@ volumetric rendering.
 <img src="docs/images/mesh_heal_title.png">
 </p>
 
-Add-on was last tested with Blender LTS 3.3.
+Add-on was last tested with Blender LTS 3.6.
 
 ## Documentation
 
 Documentation (made using [Sphinx](https://www.sphinx-doc.org/en/master/))
 is located in docs directory of the sources and is viewable online at
-https://mesh_heal.readthedocs.io.
+https://mesh-heal.readthedocs.io.
 
 ## Feedback
 

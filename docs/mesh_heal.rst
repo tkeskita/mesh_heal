@@ -22,7 +22,7 @@ Warnings
 
 * Mesh Heal operators are experimental, use at your own risk.
 * Mesh Heal operators are slow on large meshes.
-* Supported on newest LTS release of Blender (currently 3.3), but
+* Supported on newest LTS release of Blender (currently 3.6), but
   should work on any Blender version starting from 2.83.
 
 Recommendations
