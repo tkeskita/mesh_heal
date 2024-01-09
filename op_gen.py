@@ -260,14 +260,19 @@ def face_ray_cast(source, co, ray_dir, fi_list, max_ray_len=float_info.max):
     
 
 def calc_vert_edge_edge_angle(v, e1, e2):
-    """Calculates angle between edges e1 and e2, both of which are
+    """Calculates angle in radians between edges e1 and e2, both of which are
     connected at vertex v. Returns None if edges are not connected
     at vertex v, or if any argument is None.
     """
-    
+
+    # l.debug("vert %d - edges %d,%d" % (v.index, e1.index, e2.index))
+    # l.debug("  edge 1 verts are %d, %d" % (e1.verts[0].index, e1.verts[1].index))
+    # l.debug("  edge 2 verts are %d, %d" % (e2.verts[0].index, e2.verts[1].index))
     if v == None or e1 == None or e2 == None:
+        l.debug("Warning: v, e1 or e2 is None")
         return None
     if v not in e1.verts or v not in e2.verts:
+        l.debug("Warning: v not in e1 or e2 verts")
         return None
 
     # Generate normalized edge vectors
@@ -286,9 +291,9 @@ def calc_vert_edge_edge_angle(v, e1, e2):
     # Calculate angle [rad] between vec1 and vec2
     # Limit -1.0 <= vecprod <= 1.0 so that value is physical
     vecprod = max(-1.0, min(1.0, vec1 @ vec2))
-    angle = math.acos(vecprod) 
-    l.debug("Angle between edges %d and %d " % (e1.index, e2.index) \
-        + "is %f" % angle)
+    angle = math.acos(vecprod)
+    # l.debug("Angle between edges %d and %d " % (e1.index, e2.index) \
+    #     + "is %f" % angle)
     return angle
 
 def face_face_cos_angle(e, f=None, f_neighbor=None):

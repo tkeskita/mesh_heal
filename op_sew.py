@@ -33,7 +33,7 @@ import mathutils
 # ----------------------------------------------------------------------------
 
 class MeshHealSewOperator(bpy.types.Operator):
-    """Sew Mesh (Mesh Heal)"""
+    """Sew Mesh (Mesh Heal). Merges closeby vertices in open boundaries"""
     bl_idname = "mesh.mesh_heal_sew"
     bl_label = "MH Sew Mesh"
 

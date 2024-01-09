@@ -38,6 +38,7 @@ if "bpy" in locals():
     importlib.reload(op_fill_holes)
     importlib.reload(op_sew)
     importlib.reload(op_delete_overlap)
+    importlib.reload(op_merge_overlapping_edges)
 else:
     import bpy
     from . import (
@@ -46,6 +47,7 @@ else:
         op_fill_holes,
         op_sew,
         op_delete_overlap,
+        op_merge_overlapping_edges,
         )
 
 from .op_gen import *
@@ -77,9 +79,15 @@ class MeshHealSettings(bpy.types.PropertyGroup):
         min=0.001, max=1.0
     )
     max_abs_twist_angle: bpy.props.FloatProperty(
-        name="Maximum Angle (in Degrees) for Determining Twist",
+        name="Twist Angle",
         description="Maximum allowed angle (in degrees) for twisted faces",
         default=3.0,
+        min=0.0, max=90.0
+    )
+    max_abs_edge_overlap_angle: bpy.props.FloatProperty(
+        name="Edge Overlap Angle",
+        description="Maximum allowed angle (in degrees) for determining edge overlapping",
+        default=1.0,
         min=0.0, max=90.0
     )
     
@@ -104,7 +112,7 @@ class MeshHeal_PT_object_mode(bpy.types.Panel):
         col = layout.column()
         rowsub = col.row(align=True)
         rowsub.operator("mesh.mesh_heal_simple_clean", text="Simple Clean")
-        rowsub.prop(mesh_heal, "vert_merge_distance", text="distance")
+        rowsub.prop(mesh_heal, "vert_merge_distance", text="Distance")
 
         row = layout.row()
         row.operator("mesh.mesh_heal_delete_overlap", \
@@ -113,17 +121,23 @@ class MeshHeal_PT_object_mode(bpy.types.Panel):
         col = layout.column()
         rowsub = col.row(align=True)        
         rowsub.operator("mesh.mesh_heal_sew", text="Sew Mesh")
-        rowsub.prop(mesh_heal, "sew_ratio_threshold", text="ratio")
+        rowsub.prop(mesh_heal, "sew_ratio_threshold", text="Ratio")
 
         col = layout.column()
         rowsub = col.row(align=True)
         rowsub.operator("mesh.mesh_heal_triangulate_twisted", text="Triangulate Twists")
-        rowsub.prop(mesh_heal, "max_abs_twist_angle", text="angle")
+        rowsub.prop(mesh_heal, "max_abs_twist_angle", text="Angle")
 
         row = layout.row()
         row.operator("mesh.mesh_heal_clean_and_patch", text="Clean and Patch")
         row = layout.row()
         row.operator("mesh.mesh_heal_fill_holes_sharp", text="Fill Holes (Sharp)")
+
+        col = layout.column()
+        rowsub = col.row(align=True)
+        rowsub.operator("mesh.mesh_heal_merge_overlapping_edges", text="Merge Overlapping Edges")
+        rowsub.prop(mesh_heal, "max_abs_edge_overlap_angle", text="Angle")
+
         row = layout.row()
         row.operator("mesh.mesh_heal_recalc_norms", text="MH Recalc Norms")
         
@@ -174,6 +188,7 @@ classes = (
     op_fill_holes.MeshHealFillHolesSharpOperator,
     op_sew.MeshHealSewOperator,
     op_delete_overlap.MeshHealDeleteOverlapOperator,
+    op_merge_overlapping_edges.MergeOverlappingEdgesOperator,
     MeshHealSettings,
 )
 
@@ -185,7 +200,8 @@ def menu_func(self, context):
     self.layout.operator(op_fill_holes.MeshHealFillHolesSharpOperator.bl_idname)
     self.layout.operator(op_sew.MeshHealSewOperator.bl_idname)
     self.layout.operator(op_delete_overlap.MeshHealDeleteOverlapOperator.bl_idname)
-    
+    self.layout.operator(op_merge_overlapping_edges.MergeOverlappingEdgesOperator.bl_idname)
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)

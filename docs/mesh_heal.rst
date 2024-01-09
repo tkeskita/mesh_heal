@@ -135,6 +135,18 @@ be processed, have been processed.
 .. image:: images/mesh_heal_fill_sharp.png
 
 
+Merge Overlapping Edges
+^^^^^^^^^^^^^^^^^^^^^^^
+
+This operator finds and merges overlapping boundary edges. Overlap is
+determined by calculating the angle between each two connected
+boundary edge pair. If angle is below the value specified in the
+*Angle* option, merge is done. In the merge procedure, the longer of
+the two boundary edges is cut at a distance calculated from the
+shorter edge, after which the shorter edge vertex is merged with the
+new vertex created for the cut.
+
+
 MH Recalc Norms
 ^^^^^^^^^^^^^^^
 

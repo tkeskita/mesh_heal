@@ -31,7 +31,7 @@ from .op_gen import *
 # ----------------------------------------------------------------------------
 
 class MeshHealCleanAndPatchOperator(bpy.types.Operator):
-    """Clean and Patch (Mesh Heal)"""
+    """Clean and Patch (Mesh Heal). Removes non-manifold surfaces and fills open boundaries"""
     bl_idname = "mesh.mesh_heal_clean_and_patch"
     bl_label = "MH Clean and Patch"
 
@@ -48,7 +48,7 @@ class MeshHealCleanAndPatchOperator(bpy.types.Operator):
         return {'FINISHED'}
 
 class MeshHealSimpleCleanOperator(bpy.types.Operator):
-    """Simple Clean (Mesh Heal)"""
+    """Simple Clean (Mesh Heal). Merges closeby vertices, deletes overlapping faces, removes non-manifold elements"""
     bl_idname = "mesh.mesh_heal_simple_clean"
     bl_label = "MH Simple Clean"
 

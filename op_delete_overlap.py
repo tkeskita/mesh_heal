@@ -29,7 +29,7 @@ import itertools
 # ----------------------------------------------------------------------------
 
 class MeshHealDeleteOverlapOperator(bpy.types.Operator):
-    """Delete Overlap (Mesh Heal)"""
+    """Delete Overlap (Mesh Heal). Deletes overlapping faces with shared edges"""
     bl_idname = "mesh.mesh_heal_delete_overlap"
     bl_label = "MH Delete Overlapping Neighbor Faces"
 

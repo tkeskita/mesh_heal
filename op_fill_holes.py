@@ -157,7 +157,7 @@ class EdgePath:
 # ----------------------------------------------------------------------------
 
 class MeshHealFillHolesSharpOperator(bpy.types.Operator):
-    """Fill Holes Sharp (Mesh Heal)"""
+    """Fill Holes Sharp (Mesh Heal). Fills open boundaries prioritizing sharpest edges"""
     bl_idname = "mesh.mesh_heal_fill_holes_sharp"
     bl_label = "MH Fill Holes (Sharp)"
 
