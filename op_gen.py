@@ -43,13 +43,6 @@ from sys import float_info
 # logging.basicConfig(format='%(funcName)s: %(message)s', level=logging.DEBUG)
 import logging as l
 
-# Uses bmesh_copy_from_object() and bmesh_to_object() from
-# Print 3D Tools add-on. Use import instead of exec.
-# exec(open(bpy.utils.resource_path('LOCAL') + \
-#          "scripts/addons/object_print3d_utils/mesh_helpers.py").read())
-
-from object_print3d_utils.mesh_helpers import *
-
 # ----------------------------------------------------------------------------
 
 def print_face_index():
@@ -476,3 +469,40 @@ def bmesh_vert_exists_at(bm, co):
     if len(v) > 0:
         return True, v[0]
     return False, None
+
+def bmesh_copy_from_object(obj):
+    """Returns a copy of the mesh"""
+
+    assert obj.type == 'MESH'
+
+    me = obj.data
+    if obj.mode == 'EDIT':
+        bm_orig = bmesh.from_edit_mesh(me)
+        bm = bm_orig.copy()
+    else:
+        bm = bmesh.new()
+        bm.from_mesh(me)
+
+    return bm
+
+def bmesh_to_object(obj, bm):
+    """Object/Edit Mode update the object."""
+    me = obj.data
+
+    if obj.mode == 'EDIT':
+        bmesh.update_edit_mesh(me, loop_triangles=True)
+    else:
+        bm.to_mesh(me)
+        me.update()
+
+def bmesh_from_object(obj):
+    """Object/Edit Mode get mesh, use bmesh_to_object() to write back."""
+    me = obj.data
+
+    if obj.mode == 'EDIT':
+        bm = bmesh.from_edit_mesh(me)
+    else:
+        bm = bmesh.new()
+        bm.from_mesh(me)
+
+    return bm

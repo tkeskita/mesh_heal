@@ -22,7 +22,7 @@ Warnings
 
 * Mesh Heal operators are experimental, use at your own risk.
 * Mesh Heal operators are slow on large meshes.
-* Supported on newest LTS release of Blender (currently 3.6), but
+* Supported on newest LTS release of Blender (currently 4.2), but
   should work on any Blender version starting from 2.83.
 
 Recommendations
@@ -43,10 +43,6 @@ Installation
   --> open the downloaded zip file.
 * Activate the "Mesh Heal add-on" in Preferences.
   It is located in "Community" level of Blender add-ons.
-	  
-  .. note::
-     Enabling Mesh Heal add-on will also enable 3D Print
-     Toolbox add-on (which is a requirement for Mesh Heal add-on).
 
 Usage
 -----

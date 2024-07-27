@@ -71,7 +71,7 @@ def recalc_norms(obj):
     
     # Initialization    
     # Create bmesh
-    bm = bmesh_copy_from_object(obj, transform=True, triangulate=False)
+    bm = bmesh_copy_from_object(obj)
     bm.faces.ensure_lookup_table()
     bm.edges.ensure_lookup_table()    
     

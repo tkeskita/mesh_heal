@@ -52,17 +52,6 @@ else:
 
 from .op_gen import *
 
-# requirement: 3D Print Toolbox Add-on. Force enable addon if not enabled.
-
-import addon_utils
-addon='object_print3d_utils'
-loaded_default, loaded_state = addon_utils.check(addon)
-l.debug("loaded_default %s" % loaded_default)
-l.debug("loaded_state %s" % loaded_state)
-if not loaded_default:
-    l.info("Enabling %s addon" % addon)
-    addon_utils.enable(addon, default_set=True, persistent=True)
-
 class MeshHealSettings(bpy.types.PropertyGroup):
     vert_merge_distance: bpy.props.FloatProperty(
         name="Vertex Merge Distance",

@@ -53,7 +53,7 @@ def delete_overlap(obj):
     Overlapping is determined by face-face-edge angle.
     """
 
-    bm = bmesh_copy_from_object(obj, transform=False, triangulate=False)
+    bm = bmesh_copy_from_object(obj)
     bm.faces.ensure_lookup_table()
     bm.edges.ensure_lookup_table()
     bm.verts.ensure_lookup_table()

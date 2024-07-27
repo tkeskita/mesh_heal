@@ -27,6 +27,7 @@
 
 # Initialization
 from .op_gen import *
+import bmesh
 
 # ----------------------------------------------------------------------------
 
@@ -142,6 +143,23 @@ def clean_and_patch(obj):
            + ", bad verts remaining: %d" % n_verts)
     return n_verts
 
+def obj_select_intersecting_faces(obj):
+    """Check and select any faces which intersect.
+    """
+    import mathutils
+
+    if not obj.data.polygons:
+        return None
+
+    bm = bmesh_copy_from_object(obj)
+    tree = mathutils.bvhtree.BVHTree.FromBMesh(bm, epsilon=0.00001)
+    overlap = tree.overlap(tree)
+    faces_error = {i for i_pair in overlap for i in i_pair}
+    bm.faces.ensure_lookup_table()
+    for i in faces_error:
+        bm.faces[i].select_set(True)
+    bmesh_to_object(obj, bm)
+
 def clean_mesh_select_bad_verts():
     """Selects bad vertices in mesh. Bad vertices include intersecting and 
     multiple overlapping faces, and boundary vertices. 
@@ -158,8 +176,7 @@ def clean_mesh_select_bad_verts():
 
     # Select intersecting faces
     bpy.ops.mesh.select_mode(type='FACE')
-    bpy.ops.mesh.print3d_check_intersect() # Find intersecting faces
-    bpy.ops.mesh.print3d_select_report() # Select intersecting faces
+    obj_select_intersecting_faces(bpy.context.active_object)
     bpy.ops.mesh.select_mode(use_extend=True, use_expand=False, type='VERT')
 
     # Select also all non-manifold boundaries and faces
@@ -176,8 +193,7 @@ def clean_mesh_select_non_manifold_verts():
 
     # Select intersecting faces
     bpy.ops.mesh.select_mode(type='FACE')
-    bpy.ops.mesh.print3d_check_intersect() # Find intersecting faces
-    bpy.ops.mesh.print3d_select_report() # Select intersecting faces
+    obj_select_intersecting_faces(bpy.context.active_object)
     bpy.ops.mesh.select_mode(use_extend=True, use_expand=False, type='VERT')
 
     # Select also all non-manifold boundaries and faces
