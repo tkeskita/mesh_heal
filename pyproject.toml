@@ -1,0 +1,90 @@
+[tool.poetry]
+name = "mesh-heal"
+version = "1.0.0"
+description = "Utilities for healing arbitrary polygon surface meshes in Blender"
+authors = ["Tuomo Keskitalo"]
+license = "GPL-2.0-or-later"
+readme = "README.md"
+homepage = "https://github.com/tkeskita/mesh_heal"
+repository = "https://github.com/tkeskita/mesh_heal"
+documentation = "https://mesh-heal.readthedocs.io"
+packages = [{include = ".", from = "."}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+numpy = "^1.24.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+pytest-mock = "^3.11.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "7.1.2"
+sphinx-rtd-theme = "1.3.0rc1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov-config=pyproject.toml",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+markers = [
+    "unit: marks tests as unit tests (fast, isolated)",
+    "integration: marks tests as integration tests (slower, require setup)",
+    "slow: marks tests as slow (may take several seconds)",
+]
+
+[tool.coverage.run]
+source = ["tests"]
+omit = [
+    "*/__pycache__/*",
+    "*/site-packages/*",
+    ".venv/*",
+    "htmlcov/*",
+    "setup.py",
+    "conftest.py",
+    "__init__.py",
+    "op_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
