@@ -16,7 +16,7 @@ volumetric rendering.
 <img src="docs/images/mesh_heal_title.png">
 </p>
 
-Add-on was last tested with Blender LTS 4.2.
+Add-on was last tested with Blender LTS 4.2 and 5.2.
 
 ## Documentation
 
